@@ -1,0 +1,1 @@
+/afs/cern.ch/work/f/fedmante/public/PhiSym_thr/dump_EcalLaserAPDPNRatios_ABCD_offline_20130205__avg_since_00000000_till_-0000001.dat

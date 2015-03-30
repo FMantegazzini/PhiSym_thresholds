@@ -1,0 +1,1 @@
+/afs/cern.ch/work/f/fedmante/public/PhiSym_thr/dump_EcalIntercalibConstants_2012ABCD_offline__since_00208296_till_4294967295.dat

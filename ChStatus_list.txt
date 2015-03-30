@@ -1,0 +1,1 @@
+/afs/cern.ch/work/f/fedmante/public/PhiSym_thr/dump_EcalChannelStatus_v07_offline__since_00190705_till_00190705.dat
