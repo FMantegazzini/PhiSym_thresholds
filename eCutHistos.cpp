@@ -101,32 +101,53 @@ int main(int argc, char** argv)
   //fclose
 
   //make maps RawId --> ieta, iphi, iz  (ix, iy, iz)
+  //make map RawId --> EB or EC (1 for EB, 0 for EC)
 
-  std::map<int,int> mapRawId_ieta;
-  std::map<int,int> mapRawId_iphi;
-  std::map<int,int> mapRawId_iz;
+  std::map<long int,int> mapRawId_ieta; //ix for EC
+  std::map<long int,int> mapRawId_iphi; //iy for EC
+  std::map<long int,int> mapRawId_iz;
+  std::map<long int,int> mapRawId_EB;
+  
+  char cieta[100], ciphi[100], ciz[100], crawid[100], cped12[100], crms12[100], cped6[100], crms6[100], cped1[100], crms1[100];
+  int ieta, iphi, iz;
+  long int rawid;
 
-  FILE *fMap;                                                                 
-  fMap = fopen("dump_EcalPedestals_hlt__since_00208206_till_00208206.dat","r");
+  std::ifstream infile("dump_EcalPedestals_hlt__since_00208206_till_00208206.dat");
+  int iline = 0;
+  
+  while(infile >> cieta >> ciphi >> ciz >> cped12 >> crms12 >> cped6 >> crms6 >> cped1 >> crms1 >> crawid)
+    {
+      iline++;
 
-  int ieta,iphi,iz;
-  float f1,f2,f3,f4,f5,f6;
-  long int RawId;
-  fscanf(fMap, "%s \n", dumps); //skip the first line that begins with #
-  //std::string DUMPS = std::string(dumps);
-  //if(DUMPS.find("#") != std::string::npos) continue;
-  int scan = 0;
-  while(scan!=EOF){
-    scan=fscanf(fMap,"%d %d %d %f %f %f %f %f %f %d \n", &ieta,&iphi,&iz,&f1,&f2,&f3;6f4,&f5,&f6,&RawId);
-    mapRawId_ieta[RawId] = ieta;
-    mapRawId_iphi[RawId] = iphi;
-    mapRawId_iz[RawId] = iz; 
-  }
-  for (auto i : mapRawId_ieta)
-    cout << "ieta = " <<  i.first << " ; RawId = " << i.second << endl;  //print one map to test
+      if(iline > 1 && iline <= 61201){ //EB
+	ieta = atoi(cieta);
+	iphi = atoi(ciphi);
+	iz = atoi(ciz);
+	rawid = atol(crawid);
+
+	mapRawId_ieta[rawid] = ieta;
+	mapRawId_iphi[rawid] = iphi;
+	mapRawId_iz[rawid] = iz;
+	mapRawId_EB[rawid] = 1;
+      }
+
+      else if(iline > 61201){ //EC
+	ieta = atoi(cieta); //ix
+	iphi = atoi(ciphi); //iy
+	iz = atoi(ciz);
+	rawid = atol(crawid);
+
+	mapRawId_ieta[rawid] = ieta; //ix
+	mapRawId_iphi[rawid] = iphi; //iy
+	mapRawId_iz[rawid] = iz;
+	mapRawId_EB[rawid] = 0;
+      }
+    }
+
+      for (auto i : mapRawId_EB_ieta)
+	cout << "ieta = " <<  i.first << " ; RawId = " << i.second << endl;  //print one map to test
   
   //variables
-
   float ADCAmp_b = 8.;
   float ADCAmp_e = 12.;
   float eCut_b = 0.;
@@ -134,6 +155,7 @@ int main(int argc, char** argv)
   static const int  kEndcEtaRings  = 39;
   static const int  kBarlRings  = 85;
   int cutChStatus = 3;
+  TEndcapRegions* eeId = new TEndcapRegions();
 
   std::cout << "LOOP OVER THE APDPN FILES LIST";
 
@@ -220,7 +242,7 @@ int main(int argc, char** argv)
   fLC = fopen (nameFile,"r");
   int BUFSIZ = 1000;
   char line [ BUFSIZ ];
-  long int rawid;
+  //long int rawid; //already declared
   float apdpnratio;
 
   while ( fgets(line, sizeof line, file) != NULL ) { //reading the lines
@@ -252,18 +274,19 @@ int main(int argc, char** argv)
       iz = iter->second;
   
     float a = AlphaMap[ieta][iphi][iz]; //get alpha from the map
-    float LC = (apdpnratio)^a; //sintassi?? //get LC coefficient
+    float LC = pow (apdpnratio, a); //get LC coefficient
     float IC = ICmap[ieta][iphi][iz]; //get IC coefficient from the map
 
     if(ichStatus[ieta][iphi][iz] < cutChStatus) continue;
 
-    if (/*condizione per essere nel barrel*/) {
+    if ( mapRawId_EB[rawid]==1 ) { //EB
       eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
       eCut_spectrum_b_histos[abs(ieta)-1]->Fill(eCut_b*1000.); //controllare come sono binnati gli histo 
     }
-    else if (/*condizione per essere nell'endcap*/) {
+    else if ( mapRawId_EB[rawid]==0 ) { //EC
       eCut_e = ADCAmp_e * LC * IC * ADCToGeV_e;
-      eCut_spectrum_e_histos[abs(ieta)-1]->Fill(eCut_e*1000.); 
+      int iring = eeId->GetEndcapRing(ieta,iphi,iz); //actually ieta is ix and iphi is iy
+      eCut_spectrum_e_histos[iring]->Fill(eCut_e*1000.); 
     }
     
   }
