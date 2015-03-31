@@ -1,5 +1,5 @@
 // C++ code to plot energy thresholds distributions for every ECAL ring (EB and EC)
-// to compile: c++ -o eCutHistos `root-config --cflags --glibs` eCutHistos.cpp
+// to compile: c++ -o eCutHistos `root-config --cflags --glibs` eCutHistos.cpp geometryUtils.cc
 // to run: ./eCutHistos.cpp APDPN_list.txt alpha_list.txt IC_list.txt ADC_list.txt ChStatus_list.txt
 
 using namespace std;
@@ -23,7 +23,10 @@ using namespace std;
 #include "TStyle.h"
 #include <vector>
 
-std::vector<std::string> splitString(std::string& inputName, char split_char);
+#include "geometryUtils.h"
+
+//std::vector<std::string> splitString(std::string& inputName, char split_char);
+string uintToString (unsigned int);
 
 int main(int argc, char** argv)
 {
@@ -40,13 +43,14 @@ int main(int argc, char** argv)
   std::string inputList_IC = std::string(inputLIST_IC);
   std::string inputList_ADC = std::string(inputLIST_ADC);
   std::string inputList_ChStat = std::string(inputLIST_ChStat);
-    
-
+   
   std::cout << "inputList_APDPN = " << inputList_APDPN << std::endl;
   std::cout << "inputList_alpha = " << inputList_alpha << std::endl;
   std::cout << "inputList_IC = " << inputList_IC << std::endl;
   std::cout << "inputList_ADC = " << inputList_ADC << std::endl;
   std::cout << "inputList_ChStat = " << inputList_ChStat << std::endl;
+
+  //files vectors for every list
 
   std::vector<std::string> inputFiles_APDPN;
   std::vector<std::string> inputFiles_alpha;
@@ -55,10 +59,8 @@ int main(int argc, char** argv)
   std::vector<std::string> inputFiles_ChStat;
 
   char dumps[500];
-
-  //fill files vectors for every list
-
   FILE *f_dumps;
+
   f_dumps = fopen(inputList_APDPN.c_str(),"r");
   while(fscanf(f_dumps,"%s \n", dumps) !=EOF ){
     std::cout << "Reading inputFile_LC: " << dumps << std::endl;
@@ -100,54 +102,10 @@ int main(int argc, char** argv)
   }  
   //fclose
 
-  //make maps RawId --> ieta, iphi, iz  (ix, iy, iz)
-  //make map RawId --> EB or EC (1 for EB, 0 for EC)
-
-  std::map<long int,int> mapRawId_ieta; //ix for EC
-  std::map<long int,int> mapRawId_iphi; //iy for EC
-  std::map<long int,int> mapRawId_iz;
-  std::map<long int,int> mapRawId_EB;
-  
-  char cieta[100], ciphi[100], ciz[100], crawid[100], cped12[100], crms12[100], cped6[100], crms6[100], cped1[100], crms1[100];
-  int ieta, iphi, iz;
-  long int rawid;
-
-  std::ifstream infile("dump_EcalPedestals_hlt__since_00208206_till_00208206.dat");
-  int iline = 0;
-  
-  while(infile >> cieta >> ciphi >> ciz >> cped12 >> crms12 >> cped6 >> crms6 >> cped1 >> crms1 >> crawid)
-    {
-      iline++;
-
-      if(iline > 1 && iline <= 61201){ //EB
-	ieta = atoi(cieta);
-	iphi = atoi(ciphi);
-	iz = atoi(ciz);
-	rawid = atol(crawid);
-
-	mapRawId_ieta[rawid] = ieta;
-	mapRawId_iphi[rawid] = iphi;
-	mapRawId_iz[rawid] = iz;
-	mapRawId_EB[rawid] = 1;
-      }
-
-      else if(iline > 61201){ //EC
-	ieta = atoi(cieta); //ix
-	iphi = atoi(ciphi); //iy
-	iz = atoi(ciz);
-	rawid = atol(crawid);
-
-	mapRawId_ieta[rawid] = ieta; //ix
-	mapRawId_iphi[rawid] = iphi; //iy
-	mapRawId_iz[rawid] = iz;
-	mapRawId_EB[rawid] = 0;
-      }
-    }
-
-      for (auto i : mapRawId_EB_ieta)
-	cout << "ieta = " <<  i.first << " ; RawId = " << i.second << endl;  //print one map to test
-  
   //variables
+
+  int ieta, iphi, iz, chStatus;
+  long int rawid;
   float ADCAmp_b = 8.;
   float ADCAmp_e = 12.;
   float eCut_b = 0.;
@@ -157,9 +115,53 @@ int main(int argc, char** argv)
   int cutChStatus = 3;
   TEndcapRegions* eeId = new TEndcapRegions();
 
+  //make maps RawId --> ieta, iphi, iz  (ix, iy, iz)
+  //make map RawId --> EB or EC (1 for EB, 0 for EC)
+
+  std::map<long int,int> mapRawId_ieta; //ix for EC
+  std::map<long int,int> mapRawId_iphi; //iy for EC
+  std::map<long int,int> mapRawId_iz;
+  std::map<long int,int> mapRawId_EB;
+  
+  char cieta[100], ciphi[100], ciz[100], crawid[100], cped12[100], crms12[100], cped6[100], crms6[100], cped1[100], crms1[100];
+ 
+  std::ifstream infile("dump_EcalPedestals_hlt__since_00208206_till_00208206.dat");
+  int iline = 0;
+  
+  while(infile >> cieta >> ciphi >> ciz >> cped12 >> crms12 >> cped6 >> crms6 >> cped1 >> crms1 >> crawid) {
+    iline++;
+    
+    if(iline > 1 && iline <= 61201){ //EB
+      ieta = atoi(cieta);
+      iphi = atoi(ciphi);
+      iz = atoi(ciz);
+      rawid = atol(crawid);
+      
+      mapRawId_ieta[rawid] = ieta;
+      mapRawId_iphi[rawid] = iphi;
+      mapRawId_iz[rawid] = iz;
+      mapRawId_EB[rawid] = 1;
+    }
+    
+    else if(iline > 61201){ //EC
+      ieta = atoi(cieta); //ix
+      iphi = atoi(ciphi); //iy
+      iz = atoi(ciz);
+      rawid = atol(crawid);
+      
+      mapRawId_ieta[rawid] = ieta; //ix
+      mapRawId_iphi[rawid] = iphi; //iy
+      mapRawId_iz[rawid] = iz;
+      mapRawId_EB[rawid] = 0;
+    }
+  }
+  
+  //for (auto i : mapRawId_EB_ieta)
+  //cout << "ieta = " <<  i.first << " ; RawId = " << i.second << endl;  //debug print
+ 
   std::cout << "LOOP OVER THE APDPN FILES LIST";
 
-  for(unsigned int ii = 0; ii < inputFiles_APDPN(size); ii++) { //loop over the list
+  for (unsigned int ii = 0; ii < inputFiles_APDPN.size(); ii++) { //loop over the apdpn list
 
   std::cout << "Loop number: " << ii << std::endl;    
   std::cout << "Reading inputFile_APDPN: " << inputFiles_APDPN.at(ii) << std::endl;
@@ -169,9 +171,9 @@ int main(int argc, char** argv)
   std::cout << "Reading inputFile_ChStat: " << inputFiles_ChStat.at(ii) << std::endl;
 
   //create the output file
-  ostringstream t;
-  t << "Espectra_" << ii+1;
-  TFile *outputFile = new TFile(t + ".root").c_str(),"RECREATE");
+  std::string str = uintToString(ii+1);
+  TFile *outputFile = new TFile (("ESpectra_" + str + ".root").c_str(),"RECREATE");
+  std::cout << "New file created: " << "ESpectra_" << str << ".root" << std::endl; 
   
   //create spectra
   std::vector<TH1F*> eCut_spectrum_b_histos;
@@ -181,34 +183,32 @@ int main(int argc, char** argv)
   eCut_spectrum_e_histos.resize(kEndcEtaRings);
 
   ostringstream t;
-  for(Int_t i=0;i<kBarlRings;i++)
+  for (int i=0; i<kBarlRings; i++)
     {
       t << "eCut_spectrum_b_" << i+1;
       eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",50,0.,500.);
       t.str("");
     }
-  for(Int_t i=0;i<kEndcEtaRings;i++)
+  for (int i=0; i<kEndcEtaRings; i++)
     {
       t << "eCut_spectrum_e_" << i+1;
       eCut_spectrum_e_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",75,0.,1500.);
       t.str("");
     }
 
+  std::cout << "Spectra created." << std::endl;
 
   //read the Channel Status file and create ChStatus map: coord-->channel status
   std::map<int,std::map<int,std::map<int,int> > > ichStatus;
   std::ifstream infileChStatus(inputFiles_ChStat.at(ii).c_str());
-  int ieta, iphi, iz, chStatus;
-  while(infileChStatus >> ieta >> iphi >> iz >> chStatus)
-    {
-      ichStatus[ieta][iphi][iz]=chStatus; //for EC ieta =ix, iphi=iy 
-    }
-
+  while(infileChStatus >> ieta >> iphi >> iz >> chStatus) {
+    ichStatus[ieta][iphi][iz]=chStatus; //for EC ieta =ix, iphi=iy 
+  }
 
   //get ADCToGeV corrections (costants)
-  std::string nameFile(inputFiles_ADC.at(ii).c_str());
+  // std::string nameFile(inputFiles_ADC.at(ii).c_str());
   FILE *fADC;
-  fADC = fopen (nameFile,"r");
+  fADC = fopen (inputFiles_ADC.at(ii).c_str(),"r");
   std::string s1,s2;
   float ADCToGeV_b, ADCToGeV_e;
   fscanf(fADC,"%s %f %s %f \n",&s1,&ADCToGeV_b,&s2,&ADCToGeV_e);
@@ -216,40 +216,36 @@ int main(int argc, char** argv)
   
   //read the IC file and create IC map: coord-->IC
   std::map<int,std::map<int,std::map<int,int> > > ICmap;
-  std::string nameFile(inputFiles_IC.at(ii).c_str()); 
-  std::ifstream infileIC(nameFile);
-  int ieta, iphi, iz;
+  //std::string nameFile1(inputFiles_IC.at(ii).c_str()); 
+  std::ifstream infileIC(inputFiles_IC.at(ii).c_str());  
   float IC;
-  while(infileIC >> ieta >> iphi >> iz >> IC)
-    {
-      ICmap[ieta][iphi][iz]=IC; //for EC ieta =ix, iphi=iy 
-    }
+  while(infileIC >> ieta >> iphi >> iz >> IC) {
+    ICmap[ieta][iphi][iz]=IC; //for EC ieta =ix, iphi=iy 
+  }
 
   //read the alpha file and create alpha map: coord -->alpha
-  std::map<int,std::map<int,std::map<int,int> > > AlphaMap;
-  std::string nameFile(inputFiles_alpha.at(ii).c_str()); 
-  std::ifstream infileAlpha(nameFile);
+  std::map<int,std::map<int,std::map<int,int> > > alphaMap;
+  // std::string nameFile2(inputFiles_alpha.at(ii).c_str()); 
+  std::ifstream infileAlpha(inputFiles_alpha.at(ii).c_str());
   float alpha;
-  while(infileAlpha >> ieta >> iphi >> iz >> alpha)
-    {
-      AlphaMap[ieta][iphi][iz]=alpha; //for EC ieta =ix, iphi=iy 
-    }
-
+  while(infileAlpha >> ieta >> iphi >> iz >> alpha) {
+    alphaMap[ieta][iphi][iz]=alpha; //for EC ieta =ix, iphi=iy 
+  }
 
   //read APDPN file and get apdpnratio
-  std::string nameFile(inputFiles_APDPN.at(ii).c_str());
+  //std::string nameFile3(inputFiles_APDPN.at(ii).c_str());
   FILE *fAPDPN;
-  fLC = fopen (nameFile,"r");
-  int BUFSIZ = 1000;
-  char line [ BUFSIZ ];
-  //long int rawid; //already declared
+  fAPDPN = fopen (inputFiles_APDPN.at(ii).c_str(),"r");
+  int BUF = 1000;
+  char line [ BUF ];
   float apdpnratio;
 
-  while ( fgets(line, sizeof line, file) != NULL ) { //reading the lines
-   
+  while ( fgets(line, sizeof line, fAPDPN) != NULL ) { //reading the file
+    
     int n;
     int count = 0;
-    char field [ BUFSIZ / 2 ], *ptr = std::strtok(line, "\n");
+    //char field [ BUF / 2 ], *ptr = std::strtok(line, "\n");
+    char field [ BUF / 2 ], *ptr = strtok(line, "\n"); //strtok library?
     printf("line  = \"%s\"\n", line);
     while ( sscanf(ptr, "%1999[^ ]%n", field, &n) == 1 ) { //splitting the line into fields (space separated)
       count++;
@@ -257,23 +253,18 @@ int main(int argc, char** argv)
       if ( *ptr != ' ' ) break;
       if ( *field == 'T' ) break;
       if (count == 2) rawid = atoi(field); //get my rawid
-      if (count == 4) apdpnratio = atof(field); //get the apdnpratio
+      if (count == 4) apdpnratio = atof(field); //get the apdnpratio coefficient
       ++ptr;
     }
     putchar('\n');
 
     //get coordinates for my rawid from the map
-    auto iter = mapRawId_ieta.find(rawid);
-    if (iter != mapRawId_ieta.end())
-      ieta = iter->second;
-    auto iter = mapRawId_iphi.find(rawid);
-    if (iter != mapRawId_iphi.end())
-      iphi = iter->second;
-    auto iter = mapRawId_iz.find(rawid);
-    if (iter != mapRawId_iz.end())
-      iz = iter->second;
-  
-    float a = AlphaMap[ieta][iphi][iz]; //get alpha from the map
+    ieta = mapRawId_ieta.find(rawid)->second;
+    iphi = mapRawId_iphi.find(rawid)->second;
+    iz = mapRawId_iz.find(rawid)->second;
+    
+
+    float a = alphaMap[ieta][iphi][iz]; //get alpha from the map
     float LC = pow (apdpnratio, a); //get LC coefficient
     float IC = ICmap[ieta][iphi][iz]; //get IC coefficient from the map
 
@@ -281,35 +272,45 @@ int main(int argc, char** argv)
 
     if ( mapRawId_EB[rawid]==1 ) { //EB
       eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
-      eCut_spectrum_b_histos[abs(ieta)-1]->Fill(eCut_b*1000.); //controllare come sono binnati gli histo 
+      eCut_spectrum_b_histos[abs(ieta)-1]->Fill(eCut_b*1000.); 
     }
     else if ( mapRawId_EB[rawid]==0 ) { //EC
       eCut_e = ADCAmp_e * LC * IC * ADCToGeV_e;
       int iring = eeId->GetEndcapRing(ieta,iphi,iz); //actually ieta is ix and iphi is iy
       eCut_spectrum_e_histos[iring]->Fill(eCut_e*1000.); 
-    }
-    
-  }
+    }    
+  }//reading the file
+
 
   //write ouput root file
+  outputFile->cd();
   for(int i=0;i<kBarlRings;i++){
     eCut_spectrum_b_histos[i]->Write();
   }
   for(int i=0;i<kEndcEtaRings;i++){
     eCut_spectrum_e_histos[i]->Write();
   }
-  fOutput.Close();
+  outputFile->Close();
    
 }//loop over the list
 
 
 }//main 
 
-std::vector<std::string> splitString(std::string& inputName, char split_char)
+// function to convert unsigned int into string
+string uintToString(unsigned int val)
+{
+  char buff[500];
+  sprintf(buff, "%u", val);
+  string str = buff;
+  return(str);
+}
+
+/*std::vector<std::string> splitString(std::string& inputName, char split_char)
 {
   std::vector<std::string> tokens;
   std::istringstream split(inputName);
   for(std::string each; getline(split, each, split_char); tokens.push_back(each));
   return tokens;
-}
+}*/
 
