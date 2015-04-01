@@ -190,17 +190,26 @@ int main(int argc, char** argv)
     eCut_spectrum_e_histos.resize(kEndcEtaRings);
 
     ostringstream t;
-    for (int i=0; i<kBarlRings; i++) {
-      t << "eCut_spectrum_b_" << i+1;
-      eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",50,0.,500.); //number of bins?
-      t.str("");
+    for (int i=0; i<kBarlRings; i++) { //EB
+      if ( i < 85) { //EB-
+	t << "eCut_spectrum_b_" << i-85;
+	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",50,0.,500.); //number of bins?
+	t.str("");
+      }
+
+      if ( i >= 85) { //EB+
+	t << "eCut_spectrum_b_" << i-84;
+	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",50,0.,500.); //number of bins?
+	t.str("");
+      }
     }
-    for (int i=0; i<kEndcEtaRings; i++) {
+
+    for (int i=0; i<kEndcEtaRings; i++) { //EC
       t << "eCut_spectrum_e_" << i+1;
       eCut_spectrum_e_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",75,0.,1500.); //number of bins?
       t.str("");
     }
-    
+ 
     std::cout << "Spectra created" << std::endl; 
      
     //read the Channel Status file and create ChStatus map: coord-->channel status
@@ -317,14 +326,14 @@ int main(int argc, char** argv)
       
       if ( mapRawId_EB[rawid]==1 ) { //EB
 	eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
-	std::cout << "ieta = " << ieta << std::endl;
+	
 	if (ieta < 0) { //EB- histo from 0 to 84
 	  eCut_spectrum_b_histos[ieta+85]->Fill(eCut_b*1000.);
-	  std::cout << "EB- Filling histo number " << ieta+85 << std::endl; 
+	  //std::cout << "EB- Filling histo number " << ieta+85 << std::endl; 
 	}
 	else if (ieta > 0) { //EB+ histo 85 to 169
 	  eCut_spectrum_b_histos[ieta+84]->Fill(eCut_b*1000.); 
-	  std::cout << "EB+ Filling histo number " << ieta+84 << std::endl; 
+	  //std::cout << "EB+ Filling histo number " << ieta+84 << std::endl; 
 	}      
       }
 
