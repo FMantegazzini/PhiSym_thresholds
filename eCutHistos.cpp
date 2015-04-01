@@ -25,7 +25,6 @@ using namespace std;
 
 #include "geometryUtils.h"
 
-//std::vector<std::string> splitString(std::string& inputName, char split_char);
 string uintToString (unsigned int);
 
 int main(int argc, char** argv)
@@ -103,7 +102,6 @@ int main(int argc, char** argv)
 
   
   //variables
-
   int ieta, iphi, iz, chStatus;
   long int rawid;
   float ADCAmp_b = 8.;
@@ -117,7 +115,6 @@ int main(int argc, char** argv)
   
   //make maps RawId --> ieta, iphi, iz  (ix, iy, iz)
   //make map RawId --> EB or EC (1 for EB, 0 for EC)
-
   std::map<long int,int> mapRawId_ieta; //ix for EC
   std::map<long int,int> mapRawId_iphi; //iy for EC
   std::map<long int,int> mapRawId_iz;
@@ -138,13 +135,11 @@ int main(int argc, char** argv)
       iphi = atoi(ciphi);
       iz = atoi(ciz);
       rawid = atol(crawid);
-      //std::cout << "linea " << iline << ", ieta = " << ieta << ", rawid = " << rawid << std::endl;
       
       mapRawId_ieta[rawid] = ieta;
       mapRawId_iphi[rawid] = iphi;
       mapRawId_iz[rawid] = iz;
-      mapRawId_EB[rawid] = 1;
-      //std::cout << "test mappa: rawid = " << rawid << mapRawId_ieta[rawid] << std::endl;
+      mapRawId_EB[rawid] = 1;    
     }
     
     else if(iline > 61201){ //EC
@@ -171,11 +166,11 @@ int main(int argc, char** argv)
   std::cout << "Maps rawid --> coordinates, done" << std::endl;
   std::cout << "Map rawid --> EB, done" << std::endl << std::endl;
  
-  std::cout << ">>>>>> LOOP OVER THE APDPN FILES LIST:" << std::endl;
+  std::cout << "LOOP OVER THE APDPN FILES LIST:" << std::endl;
   
   for (unsigned int ii = 0; ii < inputFiles_APDPN.size(); ii++) { //loop over the apdpn list
     
-    std::cout << "Loop number: " << ii+1 << std::endl;    
+    std::cout << ">>>>>> Loop number: " << ii+1 << std::endl;    
     std::cout << "Reading inputFile_APDPN: " << inputFiles_APDPN.at(ii) << std::endl;
     std::cout << "Reading inputFile_alpha: " << inputFiles_alpha.at(ii) << std::endl;
     std::cout << "Reading inputFile_ADC: " << inputFiles_ADC.at(ii) << std::endl;
@@ -185,7 +180,7 @@ int main(int argc, char** argv)
     //create the output file
     std::string str = uintToString(ii+1);
     TFile *outputFile = new TFile (("ESpectra_" + str + ".root").c_str(),"RECREATE");
-    std::cout << ">>>> New file created: " << "ESpectra_" << str << ".root" << std::endl; 
+    std::cout << "New file created: " << "ESpectra_" << str << ".root" << std::endl; 
   
     //create spectra
     std::vector<TH1F*> eCut_spectrum_b_histos;
@@ -206,7 +201,7 @@ int main(int argc, char** argv)
       t.str("");
     }
     
-    std::cout << "Spectra created." << std::endl; 
+    std::cout << "Spectra created" << std::endl; 
      
     //read the Channel Status file and create ChStatus map: coord-->channel status
     std::map<int,std::map<int,std::map<int,int> > > ichStatus;
@@ -214,7 +209,6 @@ int main(int argc, char** argv)
     std::cout << "Reading Channel Status file" << std::endl;
     while(infileChStatus >> ieta >> iphi >> iz >> chStatus) {
       ichStatus[ieta][iphi][iz]=chStatus; //for EC ieta =ix, iphi=iy
-      //std::cout << "Filling the chStatus map: " << ieta << ", " << iphi << ", " << iz << " --> " << chStatus << std::endl;
     }
     
     //get ADCToGeV corrections (costants)
@@ -244,7 +238,6 @@ int main(int argc, char** argv)
     std::cout << "Reading alpha file" << std::endl;
     while(infileAlpha >> ieta >> iphi >> iz >> alpha) {
       alphaMap[ieta][iphi][iz]=alpha; //for EC ieta =ix, iphi=iy 
-      //std::cout << "Filling the alpha map: " << ieta << ", " << iphi << ", " << iz << " --> " << alphaMap[ieta][iphi][iz] << std::endl;
     }
     
     //read APDPN file and create apdpnratio map: rawid --> apdpnratio
@@ -283,39 +276,31 @@ int main(int argc, char** argv)
 
 	if (count == 2) {
 	  rawid = atol(field); //get my rawid
-	  //std::cout << "rawid = " << rawid << std::endl;
 	}
 	if (count == 4) {
 	  apdpnratio = atof(field); //get the apdnpratio coefficient
-	  //std::cout << "apdpnratio = " << apdpnratio << std::endl;
 	}
 	++ptr;
       }//reading the line
       
       if (isT == 0) { 
 	apdpnMap[rawid] = apdpnratio;
-	//std::cout << "apdpn map: rawid = " << rawid << " --> apdpnratio = " << apdpnMap[rawid] << std::endl;
       }
-     
-	//else if (isT == 1) printf ("in this line there was T");
-      	 
+      
     }//reading the file 
 
                  
     //loop on the apdpn map --> get rawid and apdpnratio
-    std::cout << ">>>>>> Beginning iteration over apdpn map" << std::endl;
+    std::cout << ">>>>>> Beginning iteration over the crystals" << std::endl;
     for (std::map<long int,float>::iterator it=apdpnMap.begin(); it!=apdpnMap.end(); ++it) { //apdpn map iterator
 
       rawid = it->first;
       apdpnratio = it->second;
-
-      //std::cout << "rawid = " << rawid << " --> apdpnratio = " << apdpnratio << std::endl;
       
       //get coordinates for the rawid from the RawId map
       ieta = mapRawId_ieta.find(rawid)->second;
       iphi = mapRawId_iphi.find(rawid)->second;
       iz = mapRawId_iz.find(rawid)->second;
-      // std::cout << "rawid = " << rawid << "--> ieta = " << ieta << ", iphi = " << iphi << ", iz = " << iz << std::endl;
       
       float a = alphaMap[ieta][iphi][iz]; //get alpha from the map
       float LC = pow (apdpnratio, a); //get LC coefficient
@@ -328,26 +313,23 @@ int main(int argc, char** argv)
       std::cout << "LC = (apdpnratio)^alpha = " << apdpnratio << "^" << a << " = " << LC << std::endl;
       */
 
-      if(ichStatus[ieta][iphi][iz] < cutChStatus) continue;
-      //std::cout << "Cut channel status ok" << std::endl;
+      if(ichStatus[ieta][iphi][iz] > cutChStatus) continue;
       
       if ( mapRawId_EB[rawid]==1 ) { //EB
 	eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
-	//std::cout << "rawid = " << rawid << " ---> EB" << std::endl;
-	//std::cout << "eCut_b = " << ADCAmp_b << " * " << LC << " * " << IC << " * " << ADCToGeV_b << " = " << eCut_b << std::endl;
 	eCut_spectrum_b_histos[abs(ieta)-1]->Fill(eCut_b*1000.); 
+	//std::cout << "Filling histo_b ring " << abs(ieta)-1 << "; rawid = " << rawid << ", chStatus = " << ichStatus[ieta][iphi][iz] <<  std::endl;
       }
       else if ( mapRawId_EB[rawid]==0 ) { //EC
 	eCut_e = ADCAmp_e * LC * IC * ADCToGeV_e;
-	//std::cout << "rawid = " << rawid << " ---> EC" << std::endl;
-	//std::cout << "eCut_e = " << ADCAmp_e << " * " << LC << " * " << IC << " * " << ADCToGeV_e << " = " << eCut_e << std::endl;
 	int iring = eeId->GetEndcapRing(ieta,iphi,iz); //actually ieta is ix and iphi is iy
-	eCut_spectrum_e_histos[iring]->Fill(eCut_e*1000.); 
+	eCut_spectrum_e_histos[iring]->Fill(eCut_e*1000.);  
+	//std::cout << "Filling histo_c ring " << iring << "; rawid = " << rawid << ", chStatus = " <<  ichStatus[ieta][iphi][iz] << std::endl;
       }
       
     }//apdpn map iterator
     
-    std::cout << ">>>>>> End of iteration over apdpn map" << std::endl;
+    std::cout << ">>>>>> End of the iteration over the crystals" << std::endl;
       
     //write ouput root file
     outputFile->cd();
@@ -358,19 +340,18 @@ int main(int argc, char** argv)
       eCut_spectrum_e_histos[i]->Write();
     }
     outputFile->Close();
-    std::cout << ">>>> Output file written" << std::endl;
+    std::cout << "Output file written" << std::endl;
     
   }//loop over the list
-
-  std::cout << "End of the loop over the list" << std::endl;
+ 
     
-  }//main 
+}//main 
 
-  // function to convert unsigned int into string
-  string uintToString(unsigned int val)
-  {
-    char buff[500];
-    sprintf(buff, "%u", val);
-    string str = buff;
-    return(str);
-  }
+// function to convert unsigned int into string
+string uintToString(unsigned int val)
+{
+  char buff[500];
+  sprintf(buff, "%u", val);
+  string str = buff;
+  return(str);
+}
