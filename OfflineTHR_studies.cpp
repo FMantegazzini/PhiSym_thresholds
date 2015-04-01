@@ -107,9 +107,17 @@ int main(int argc, char** argv)
   float ADCAmp_e = 12.;
   float eCut_b = 0.;
   float eCut_e = 0.;
+  int cutChStatus = 3;
+
   static const int  kEndcEtaRings  = 39;
   static const int  kBarlRings  = 170;
-  int cutChStatus = 3;
+  Int_t nBins_b = 50;  
+  Double_t eMin_b = 0.;
+  Double_t eMax_b = 500.;
+  Int_t nBins_e = 75;   
+  Double_t eMin_e = 0.;
+  Double_t eMax_e = 1500.;
+  
   TEndcapRegions* eeId = new TEndcapRegions();
   
   //make maps RawId --> ieta, iphi, iz  (ix, iy, iz)
@@ -121,14 +129,12 @@ int main(int argc, char** argv)
   
   char cieta[100], ciphi[100], ciz[100], crawid[100], cped12[100], crms12[100], cped6[100], crms6[100], cped1[100], crms1[100];
  
-  std::ifstream infile("dump_EcalPedestals_hlt__since_00208206_till_00208206.dat");
-  //  std::ifstream infile("/afs/cern.ch/work/f/fedmante/public/PhiSym_thr/dump_EcalPedestals_hlt__since_00208206_till_00208206.dat");
+  std::ifstream infile("/afs/cern.ch/work/f/fedmante/public/PhiSym_OfflineThres/dump_EcalPedestals_hlt__since_00208206_till_00208206.dat");
   int iline = 0;
-  
   while(infile >> cieta >> ciphi >> ciz >> cped12 >> crms12 >> cped6 >> crms6 >> cped1 >> crms1 >> crawid) {
 
     iline++;
-     
+
     if(iline > 1 && iline <= 61201){ //EB
       ieta = atoi(cieta);
       iphi = atoi(ciphi);
@@ -180,24 +186,25 @@ int main(int argc, char** argv)
     eCut_spectrum_b_histos.resize(kBarlRings);
     eCut_spectrum_e_histos.resize(kEndcEtaRings);
 
+
     ostringstream t;
     for (int i=0; i<kBarlRings; i++) { //EB
       if ( i < 85) { //EB-
 	t << "eCut_spectrum_b_" << i-85;
-	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",50,0.,500.); //number of bins?
+	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_b,eMin_b,eMax_b);
 	t.str("");
       }
 
       if ( i >= 85) { //EB+
 	t << "eCut_spectrum_b_" << i-84;
-	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",50,0.,500.); //number of bins?
+	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_b,eMin_b,eMax_b); 
 	t.str("");
       }
     }
 
     for (int i=0; i<kEndcEtaRings; i++) { //EE
       t << "eCut_spectrum_e_" << i+1;
-      eCut_spectrum_e_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",75,0.,1500.); //number of bins?
+      eCut_spectrum_e_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_e,eMin_e,eMax_e); //number of bins?
       t.str("");
     }
  
@@ -212,16 +219,14 @@ int main(int argc, char** argv)
     }
     
     //get ADCToGeV corrections (costants)
-    FILE *fADC;
-    fADC = fopen (inputFiles_ADC.at(ii).c_str(),"r");
+    std::ifstream infileADC(inputFiles_ADC.at(ii).c_str());
     std::string s1,s2;
     float ADCToGeV_b, ADCToGeV_e;
     std::cout << "Reading ADCToGeV file:" << std::endl; 
-    //fscanf(fADC,"%s %f  %s %f \n",&s1,&ADCToGeV_b,&s2,&ADCToGeV_e); // <<<<<----------------- PROBLEM HERE!
-    ADCToGeV_b = 0.039610;
-    ADCToGeV_e = 0.067230;
-    std::cout << "ADCToGeV constant for EB = " <<  ADCToGeV_b << ", ADCToGeV constant for EE = " << ADCToGeV_e << std::endl;
-   
+    while(infileADC >> s1 >> ADCToGeV_b >> s2 >> ADCToGeV_e) {
+      std::cout << "ADCToGeV constants: for EB = " <<  ADCToGeV_b << ", for EE = " << ADCToGeV_e << std::endl;
+    }
+      
     //read the IC file and create IC map: coord-->IC
     std::map<int,std::map<int,std::map<int,float> > > ICmap;
     std::ifstream infileIC(inputFiles_IC.at(ii).c_str());  
@@ -343,7 +348,7 @@ int main(int argc, char** argv)
     TGraph *mean_1s_EB = new TGraph(); //energy mean + 1sigma vs ring for EB
     TGraph *mean_2s_EB = new TGraph(); //energy mean + 2sigma vs ring for EB
     TGraph *maxEnergy_EB = new TGraph(); //max energy vs ring for EB
-
+    
     TGraph *mean_EE = new TGraph(); //energy mean vs ring for EE
     TGraph *mean_1s_EE = new TGraph(); //energy mean + 1sigma vs ring for EE
     TGraph *mean_2s_EE = new TGraph(); //energy mean + 2sigma vs ring for EE
@@ -355,21 +360,23 @@ int main(int argc, char** argv)
       if (i < 85) { //EB-
 	mean = eCut_spectrum_b_histos[i]->GetMean();
 	sigma = eCut_spectrum_b_histos[i]->GetStdDev();
-	//cout << "EB-, i = " << i << ", mean = " << mean << ", sigma = " << sigma << endl;
-
+	maxEnergy = (eCut_spectrum_b_histos[i]->FindLastBinAbove()) * (eMax_b - eMin_b) / nBins_b;
+	
 	mean_EB->SetPoint(i,i-85,mean);
 	mean_1s_EB->SetPoint(i,i-85,mean+sigma);
 	mean_2s_EB->SetPoint(i,i-85,mean+(2*sigma));
+	maxEnergy_EB->SetPoint(i,i-85,maxEnergy);
       }
 
       else if (i >= 85) { //EB+
 	mean = eCut_spectrum_b_histos[i]->GetMean();
 	sigma = eCut_spectrum_b_histos[i]->GetStdDev();
-	//cout << "EB-, i = " << i << ", mean = " << mean << ", sigma = " << sigma << endl;
-
+	maxEnergy = (eCut_spectrum_b_histos[i]->FindLastBinAbove()) * (eMax_b - eMin_b) / nBins_b;
+	
 	mean_EB->SetPoint(i,i-84,mean);
 	mean_1s_EB->SetPoint(i,i-84,mean+sigma);
 	mean_2s_EB->SetPoint(i,i-84,mean+(2*sigma));
+	maxEnergy_EB->SetPoint(i,i-84,maxEnergy);
       }
     }
     std::cout << "TGraphs for EB filled" << std::endl;
@@ -377,11 +384,12 @@ int main(int argc, char** argv)
     for(int i = 0; i < kEndcEtaRings; i++) { //EE
       mean = eCut_spectrum_b_histos[i]->GetMean();
       sigma = eCut_spectrum_b_histos[i]->GetStdDev();
-      //cout << "EB-, i = " << i << ", mean = " << mean << ", sigma = " << sigma << endl;
+      maxEnergy = (eCut_spectrum_b_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
       
       mean_EE->SetPoint(i,i+1,mean);
       mean_1s_EE->SetPoint(i,i+1,mean+sigma);
       mean_2s_EE->SetPoint(i,i+1,mean+(2*sigma));
+      maxEnergy_EE->SetPoint(i,i+1,maxEnergy);
     }
     std::cout << "TGraphs for EE filled" << std::endl;
     
@@ -397,18 +405,23 @@ int main(int argc, char** argv)
     mg1->Add(mean_EB,"lp");
     mg1->Add(mean_1s_EB,"cp");
     mg1->Add(mean_2s_EB,"cp");
+    mg1->Add(maxEnergy_EB,"cp");
     
     mean_EB->SetMarkerColor(kRed);
     mean_EB->SetMarkerStyle(20);
-    mean_EB->SetMarkerSize(1);
+    mean_EB->SetMarkerSize(0.8);
     
     mean_1s_EB->SetMarkerColor(kBlue);
     mean_1s_EB->SetMarkerStyle(20);
-    mean_1s_EB->SetMarkerSize(1);
+    mean_1s_EB->SetMarkerSize(0.8);
     
     mean_2s_EB->SetMarkerColor(kBlack);
     mean_2s_EB->SetMarkerStyle(20);
-    mean_2s_EB->SetMarkerSize(1);
+    mean_2s_EB->SetMarkerSize(0.8);
+
+    maxEnergy_EB->SetMarkerColor(kGreen);
+    maxEnergy_EB->SetMarkerStyle(20);
+    maxEnergy_EB->SetMarkerSize(0.8);
        
     mg1->SetTitle("EB;Rings (#); Energy (MeV)");
     mg1->Draw("APC");
@@ -420,6 +433,7 @@ int main(int argc, char** argv)
     delete mean_EB;
     delete mean_1s_EB;
     delete mean_2s_EB;    
+    delete maxEnergy_EB;
     delete c1;
     delete mg1;
          
@@ -433,18 +447,23 @@ int main(int argc, char** argv)
     mg2->Add(mean_EE,"lp");
     mg2->Add(mean_1s_EE,"cp");
     mg2->Add(mean_2s_EE,"cp");
+    mg2->Add(maxEnergy_EE,"cp");
     
     mean_EE->SetMarkerColor(kRed);
     mean_EE->SetMarkerStyle(20);
-    mean_EE->SetMarkerSize(1);
+    mean_EE->SetMarkerSize(0.8);
     
     mean_1s_EE->SetMarkerColor(kBlue);
     mean_1s_EE->SetMarkerStyle(20);
-    mean_1s_EE->SetMarkerSize(1);
+    mean_1s_EE->SetMarkerSize(0.8);
    
     mean_2s_EE->SetMarkerColor(kBlack);
     mean_2s_EE->SetMarkerStyle(20);
-    mean_2s_EE->SetMarkerSize(1);
+    mean_2s_EE->SetMarkerSize(0.8);
+    
+    maxEnergy_EE->SetMarkerColor(kGreen);
+    maxEnergy_EE->SetMarkerStyle(20);
+    maxEnergy_EE->SetMarkerSize(0.8);
     
     mg2->SetTitle("EE;Rings (#); Energy (MeV)");
     mg2->Draw("APC");
@@ -454,7 +473,8 @@ int main(int argc, char** argv)
     
     delete mean_EE;
     delete mean_1s_EE;
-    delete mean_2s_EE;    
+    delete mean_2s_EE;
+    delete maxEnergy_EE;
     delete c2;
     delete mg2;
     
