@@ -13,7 +13,7 @@ using namespace std;
 #include <map>
 #include "TFile.h"
 #include "TH1F.h"
-#include "TGraphErrors.h"
+#include "TGraph.h"
 #include "TCanvas.h"
 #include "TLegend.h"
 #include "TMath.h"
@@ -114,9 +114,9 @@ int main(int argc, char** argv)
   TEndcapRegions* eeId = new TEndcapRegions();
   
   //make maps RawId --> ieta, iphi, iz  (ix, iy, iz)
-  //make map RawId --> EB or EC (1 for EB, 0 for EC)
-  std::map<long int,int> mapRawId_ieta; //ix for EC
-  std::map<long int,int> mapRawId_iphi; //iy for EC
+  //make map RawId --> EB or EE (1 for EB, 0 for EE)
+  std::map<long int,int> mapRawId_ieta; //ix for EE
+  std::map<long int,int> mapRawId_iphi; //iy for EE
   std::map<long int,int> mapRawId_iz;
   std::map<long int,int> mapRawId_EB;
   
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
       mapRawId_EB[rawid] = 1;    
     }
     
-    else if(iline > 61201){ //EC
+    else if(iline > 61201){ //EE
       ieta = atoi(cieta); //ix
       iphi = atoi(ciphi); //iy
       iz = atoi(ciz);
@@ -204,7 +204,7 @@ int main(int argc, char** argv)
       }
     }
 
-    for (int i=0; i<kEndcEtaRings; i++) { //EC
+    for (int i=0; i<kEndcEtaRings; i++) { //EE
       t << "eCut_spectrum_e_" << i+1;
       eCut_spectrum_e_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",75,0.,1500.); //number of bins?
       t.str("");
@@ -229,7 +229,7 @@ int main(int argc, char** argv)
     //fscanf(fADC,"%s %f  %s %f \n",&s1,&ADCToGeV_b,&s2,&ADCToGeV_e); // <<<<<----------------- PROBLEM HERE!
     ADCToGeV_b = 0.039610;
     ADCToGeV_e = 0.067230;
-    std::cout << "ADCToGeV constant for EB = " <<  ADCToGeV_b << ", ADCToGeV constant for EC = " << ADCToGeV_e << std::endl;
+    std::cout << "ADCToGeV constant for EB = " <<  ADCToGeV_b << ", ADCToGeV constant for EE = " << ADCToGeV_e << std::endl;
    
     //read the IC file and create IC map: coord-->IC
     std::map<int,std::map<int,std::map<int,float> > > ICmap;
