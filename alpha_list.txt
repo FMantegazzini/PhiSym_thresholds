@@ -1,1 +1,2 @@
-/afs/cern.ch/work/f/fedmante/public/PhiSym_thr/dump_EcalLaserAlphas_EB_sic1_btcp152_EE_sic1_btcp116__since_1_till_4294967295.dat
+/afs/cern.ch/work/f/fedmante/public/PhiSym_OfflineThres/dump_EcalLaserAlphas_EB_sic1_btcp152_EE_sic1_btcp116__since_1_till_4294967295.dat
+/afs/cern.ch/work/f/fedmante/public/PhiSym_OfflineThres/dump_EcalLaserAlphas_EB_sic1_btcp152_EE_sic1_btcp116__since_1_till_4294967295.dat
