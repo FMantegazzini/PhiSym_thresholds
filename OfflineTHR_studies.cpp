@@ -1,4 +1,5 @@
 // C++ code for offline thresholds studies
+//Output: energy distributions for every ring (EB and EE) + final plots (energy vs rings)
 // to compile: c++ -o OfflineTHR_studies `root-config --cflags --glibs` OfflineTHR_studies.cpp geometryUtils.cc
 // to run: ./OfflineTHR_studies APDPN_list.txt alpha_list.txt IC_list.txt ADC_list.txt ChStatus_list.txt
 
