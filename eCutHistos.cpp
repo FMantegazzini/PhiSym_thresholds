@@ -109,7 +109,7 @@ int main(int argc, char** argv)
   float eCut_b = 0.;
   float eCut_e = 0.;
   static const int  kEndcEtaRings  = 39;
-  static const int  kBarlRings  = 85;
+  static const int  kBarlRings  = 170;
   int cutChStatus = 3;
   TEndcapRegions* eeId = new TEndcapRegions();
   
@@ -317,14 +317,21 @@ int main(int argc, char** argv)
       
       if ( mapRawId_EB[rawid]==1 ) { //EB
 	eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
-	eCut_spectrum_b_histos[abs(ieta)-1]->Fill(eCut_b*1000.); 
-	//std::cout << "Filling histo_b ring " << abs(ieta)-1 << "; rawid = " << rawid << ", chStatus = " << ichStatus[ieta][iphi][iz] <<  std::endl;
+	std::cout << "ieta = " << ieta << std::endl;
+	if (ieta < 0) { //EB- histo from 0 to 84
+	  eCut_spectrum_b_histos[ieta+85]->Fill(eCut_b*1000.);
+	  std::cout << "EB- Filling histo number " << ieta+85 << std::endl; 
+	}
+	else if (ieta > 0) { //EB+ histo 85 to 169
+	  eCut_spectrum_b_histos[ieta+84]->Fill(eCut_b*1000.); 
+	  std::cout << "EB+ Filling histo number " << ieta+84 << std::endl; 
+	}      
       }
+
       else if ( mapRawId_EB[rawid]==0 ) { //EC
 	eCut_e = ADCAmp_e * LC * IC * ADCToGeV_e;
 	int iring = eeId->GetEndcapRing(ieta,iphi,iz); //actually ieta is ix and iphi is iy
 	eCut_spectrum_e_histos[iring]->Fill(eCut_e*1000.);  
-	//std::cout << "Filling histo_c ring " << iring << "; rawid = " << rawid << ", chStatus = " <<  ichStatus[ieta][iphi][iz] << std::endl;
       }
       
     }//apdpn map iterator
