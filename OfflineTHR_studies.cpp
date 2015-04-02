@@ -383,9 +383,9 @@ int main(int argc, char** argv)
     std::cout << "TGraphs for EB filled" << std::endl;
     
     for(int i = 0; i < kEndcEtaRings; i++) { //EE
-      mean = eCut_spectrum_b_histos[i]->GetMean();
-      sigma = eCut_spectrum_b_histos[i]->GetStdDev();
-      maxEnergy = (eCut_spectrum_b_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
+      mean = eCut_spectrum_e_histos[i]->GetMean();
+      sigma = eCut_spectrum_e_histos[i]->GetStdDev();
+      maxEnergy = (eCut_spectrum_e_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
       
       mean_EE->SetPoint(i,i+1,mean);
       mean_1s_EE->SetPoint(i,i+1,mean+sigma);
