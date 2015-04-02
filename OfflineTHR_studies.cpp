@@ -108,7 +108,7 @@ int main(int argc, char** argv)
   float ADCAmp_e = 12.;
   float eCut_b = 0.;
   float eCut_e = 0.;
-  int cutChStatus = 3;
+  int cutChStatus = 0;
 
   static const int  kEndcEtaRings  = 39;
   static const int  kBarlRings  = 170;
