@@ -478,7 +478,7 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   g1 -> GetXaxis() -> SetRangeUser(xmin,xmax);
 
   g1 -> GetXaxis() -> SetTitle("iRing");
-  g1 -> GetYaxis() -> SetTitle("Energy (ADC/MeV)");
+  g1 -> GetYaxis() -> SetTitle("Energy (MeV/ADC)");
    
   g1 -> SetMarkerStyle(20);
   g1 -> SetMarkerSize(0.6);
