@@ -1,5 +1,5 @@
 // C++ code for offline thresholds studies
-//Output: energy distributions for every ring (EB and EE) + final plots (energy vs rings)
+// Output: energy distributions for every ring (EB and EE) + final plots (energy vs rings)
 // to compile: c++ -o OfflineTHR_studies `root-config --cflags --glibs` OfflineTHR_studies.cpp geometryUtils.cc
 // to run: ./OfflineTHR_studies APDPN_list.txt alpha_list.txt IC_list.txt ADC_list.txt ChStatus_list.txt
 
@@ -28,6 +28,7 @@ using namespace std;
 #include "geometryUtils.h"
 
 string uintToString (unsigned int);
+void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3, TGraph* g4, std::string Title);
 
 int main(int argc, char** argv)
 {
@@ -110,8 +111,9 @@ int main(int argc, char** argv)
   float eCut_e = 0.;
   int cutChStatus = 0;
 
-  static const int  kEndcEtaRings  = 39;
-  static const int  kBarlRings  = 170;
+  static const int  EE_Rings = 39;
+  static const int  EB_Rings  = 85;
+
   Int_t nBins_b = 50;  
   Double_t eMin_b = 0.;
   Double_t eMax_b = 500.;
@@ -181,31 +183,39 @@ int main(int argc, char** argv)
     std::cout << "New file created: " << "ESpectra_" << str << ".root" << std::endl; 
   
     //create spectra
-    std::vector<TH1F*> eCut_spectrum_b_histos;
-    std::vector<TH1F*> eCut_spectrum_e_histos;
+    std::vector<TH1F*> eCut_spectrum_BP_histos;
+    std::vector<TH1F*> eCut_spectrum_BM_histos;
+    std::vector<TH1F*> eCut_spectrum_EP_histos;
+    std::vector<TH1F*> eCut_spectrum_EM_histos;
 
-    eCut_spectrum_b_histos.resize(kBarlRings);
-    eCut_spectrum_e_histos.resize(kEndcEtaRings);
-
+    eCut_spectrum_BP_histos.resize(EB_Rings);
+    eCut_spectrum_BM_histos.resize(EB_Rings);
+    eCut_spectrum_EP_histos.resize(EE_Rings);
+    eCut_spectrum_EM_histos.resize(EE_Rings);
+    
 
     ostringstream t;
-    for (int i=0; i<kBarlRings; i++) { //EB
-      if ( i < 85) { //EB-
-	t << "eCut_spectrum_b_" << i-85;
-	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_b,eMin_b,eMax_b);
+    for (int i=0; i<EB_Rings; i++) { //EB-
+     	t << "eCut_spectrum_BM_" << i-85;
+	eCut_spectrum_BM_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_b,eMin_b,eMax_b);
 	t.str("");
-      }
-
-      if ( i >= 85) { //EB+
-	t << "eCut_spectrum_b_" << i-84;
-	eCut_spectrum_b_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_b,eMin_b,eMax_b); 
-	t.str("");
-      }
     }
 
-    for (int i=0; i<kEndcEtaRings; i++) { //EE
-      t << "eCut_spectrum_e_" << i+1;
-      eCut_spectrum_e_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_e,eMin_e,eMax_e); //number of bins?
+    for (int i=0; i<EB_Rings; i++) { //EB+
+	t << "eCut_spectrum_BP_" << i+1;
+	eCut_spectrum_BP_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_b,eMin_b,eMax_b); 
+	t.str("");
+    }
+    
+    for (int i=0; i<EE_Rings; i++) { //EE-
+      t << "eCut_spectrum_EM_" << i+1;
+      eCut_spectrum_EM_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_e,eMin_e,eMax_e); //number of bins?
+      t.str("");
+    }
+
+    for (int i=0; i<EE_Rings; i++) { //EE-
+      t << "eCut_spectrum_EP_" << i+1;
+      eCut_spectrum_EP_histos[i]=new TH1F(t.str().c_str(),";E_{CUT} [MeV]",nBins_e,eMin_e,eMax_e); //number of bins?
       t.str("");
     }
  
@@ -277,7 +287,7 @@ int main(int argc, char** argv)
 	}
 
 	if (count == 2) {
-	  rawid = atol(field); //get my rawid
+	  rawid = atol(field); //get the rawid
 	}
 	if (count == 4) {
 	  apdpnratio = atof(field); //get the apdnpratio coefficient
@@ -305,26 +315,33 @@ int main(int argc, char** argv)
       iz = mapRawId_iz.find(rawid)->second;
       
       float a = alphaMap[ieta][iphi][iz]; //get alpha from the map
-      float LC = pow (apdpnratio, a); //get LC coefficient
+      float LC = pow (apdpnratio, -a); //get LC coefficient
       float IC = ICmap[ieta][iphi][iz]; //get IC coefficient from the map
+      //cout << "IC = " << IC << ", alpha = " << a << ", apdpnratio = " << apdpnratio << ", LC = " << LC << endl;
        
       if(ichStatus[ieta][iphi][iz] > cutChStatus) continue;
       
       if ( mapRawId_EB[rawid]==1 ) { //EB
 	eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
 	
-	if (ieta < 0) { //EB- histo from 0 to 84
-	  eCut_spectrum_b_histos[ieta+85]->Fill(eCut_b*1000.); 
+	if (ieta < 0) { //EB-
+	  eCut_spectrum_BM_histos[ieta+85]->Fill(eCut_b*1000.); 
 	}
-	else if (ieta > 0) { //EB+ histo 85 to 169
-	  eCut_spectrum_b_histos[ieta+84]->Fill(eCut_b*1000.); 
+	else if (ieta > 0) { //EB+
+	  eCut_spectrum_BP_histos[ieta-1]->Fill(eCut_b*1000.); 
 	}      
       }
 
       else if ( mapRawId_EB[rawid]==0 ) { //EC
 	eCut_e = ADCAmp_e * LC * IC * ADCToGeV_e;
 	int iring = eeId->GetEndcapRing(ieta,iphi,iz); //actually ieta is ix and iphi is iy
-	eCut_spectrum_e_histos[iring]->Fill(eCut_e*1000.);  
+	
+	if (iz < 0) { // EE-
+	  eCut_spectrum_EM_histos[iring]->Fill(eCut_e*1000.);  
+	}
+	else if (iz > 0) { // EE+
+	  eCut_spectrum_EP_histos[iring]->Fill(eCut_e*1000.);  
+	}
       }
       
     }//apdpn map iterator
@@ -333,162 +350,178 @@ int main(int argc, char** argv)
       
     //write ouput root file with energy distributions for every ring
     outputFile->cd();
-    for(int i=0;i<kBarlRings;i++){
-      eCut_spectrum_b_histos[i]->Write();
+    for(int i=0;i<EB_Rings;i++){
+      eCut_spectrum_BP_histos[i]->Write();
     }
-    for(int i=0;i<kEndcEtaRings;i++){
-      eCut_spectrum_e_histos[i]->Write();
+
+    for(int i=0;i<EB_Rings;i++){
+      eCut_spectrum_BM_histos[i]->Write();
+    }
+
+    for(int i=0;i<EE_Rings;i++){
+      eCut_spectrum_EP_histos[i]->Write();
+    }
+
+    for(int i=0;i<EE_Rings;i++){
+      eCut_spectrum_EM_histos[i]->Write();
     }
     
     std::cout << "Output file ESpectra written" << std::endl;
-
-    //MAKE PLOTS
+    
+    //MAKE FINAL PLOTS
     Double_t mean, sigma, maxEnergy;
 
-    TGraph *mean_EB = new TGraph(); //energy mean vs ring for EB
-    TGraph *mean_1s_EB = new TGraph(); //energy mean + 1sigma vs ring for EB
-    TGraph *mean_2s_EB = new TGraph(); //energy mean + 2sigma vs ring for EB
-    TGraph *maxEnergy_EB = new TGraph(); //max energy vs ring for EB
-    
-    TGraph *mean_EE = new TGraph(); //energy mean vs ring for EE
-    TGraph *mean_1s_EE = new TGraph(); //energy mean + 1sigma vs ring for EE
-    TGraph *mean_2s_EE = new TGraph(); //energy mean + 2sigma vs ring for EE
-    TGraph *maxEnergy_EE = new TGraph(); //max energy vs ring for EE
+    //EB
+    TGraph *mean_EBP = new TGraph(); //energy mean vs ring for EB+
+    TGraph *mean_EBM = new TGraph(); //energy mean vs ring for EB-
+    TGraph *mean_1s_EBP = new TGraph(); //energy mean + 1sigma vs ring for EB+
+    TGraph *mean_1s_EBM = new TGraph(); //energy mean + 1sigma vs ring for EB-
+    TGraph *mean_2s_EBP = new TGraph(); //energy mean + 2sigma vs ring for EB+
+    TGraph *mean_2s_EBM = new TGraph(); //energy mean + 2sigma vs ring for EB-
+    TGraph *maxEnergy_EBP = new TGraph(); //max energy vs ring for EB+
+    TGraph *maxEnergy_EBM = new TGraph(); //max energy vs ring for EB-
 
+    //EE
+    TGraph *mean_EEP = new TGraph(); //energy mean vs ring for EE+
+    TGraph *mean_EEM = new TGraph(); //energy mean vs ring for EE-
+    TGraph *mean_1s_EEP = new TGraph(); //energy mean + 1sigma vs ring for EE+
+    TGraph *mean_1s_EEM = new TGraph(); //energy mean + 1sigma vs ring for EE-
+    TGraph *mean_2s_EEP = new TGraph(); //energy mean + 2sigma vs ring for EE+
+    TGraph *mean_2s_EEM = new TGraph(); //energy mean + 2sigma vs ring for EE-
+    TGraph *maxEnergy_EEP = new TGraph(); //max energy vs ring for EE+
+    TGraph *maxEnergy_EEM = new TGraph(); //max energy vs ring for EE-
+
+    
     std::cout << "TGraphs created" << std::endl;
         
-    for(int i = 0; i < kBarlRings; i++) { //EB-
-      if (i < 85) { //EB-
-	mean = eCut_spectrum_b_histos[i]->GetMean();
-	sigma = eCut_spectrum_b_histos[i]->GetStdDev();
-	maxEnergy = (eCut_spectrum_b_histos[i]->FindLastBinAbove()) * (eMax_b - eMin_b) / nBins_b;
+    for(int i = 0; i < EB_Rings; i++) { //EB-
+	mean = eCut_spectrum_BM_histos[i]->GetMean();
+	sigma = eCut_spectrum_BM_histos[i]->GetStdDev();
+	maxEnergy = (eCut_spectrum_BM_histos[i]->FindLastBinAbove()) * (eMax_b - eMin_b) / nBins_b;
 	
-	mean_EB->SetPoint(i,i-85,mean);
-	mean_1s_EB->SetPoint(i,i-85,mean+sigma);
-	mean_2s_EB->SetPoint(i,i-85,mean+(2*sigma));
-	maxEnergy_EB->SetPoint(i,i-85,maxEnergy);
+	mean_EBM->SetPoint(i,i-85,mean);
+	mean_1s_EBM->SetPoint(i,i-85,mean+sigma);
+	mean_2s_EBM->SetPoint(i,i-85,mean+(2*sigma));
+	maxEnergy_EBM->SetPoint(i,i-85,maxEnergy);
       }
 
-      else if (i >= 85) { //EB+
-	mean = eCut_spectrum_b_histos[i]->GetMean();
-	sigma = eCut_spectrum_b_histos[i]->GetStdDev();
-	maxEnergy = (eCut_spectrum_b_histos[i]->FindLastBinAbove()) * (eMax_b - eMin_b) / nBins_b;
-	
-	mean_EB->SetPoint(i,i-84,mean);
-	mean_1s_EB->SetPoint(i,i-84,mean+sigma);
-	mean_2s_EB->SetPoint(i,i-84,mean+(2*sigma));
-	maxEnergy_EB->SetPoint(i,i-84,maxEnergy);
-      }
+    for(int i = 0; i < EB_Rings; i++) { //EB+
+      mean = eCut_spectrum_BP_histos[i]->GetMean();
+      sigma = eCut_spectrum_BP_histos[i]->GetStdDev();
+      maxEnergy = (eCut_spectrum_BP_histos[i]->FindLastBinAbove()) * (eMax_b - eMin_b) / nBins_b;
+      
+      mean_EBP->SetPoint(i,i+1,mean);
+      mean_1s_EBP->SetPoint(i,i+1,mean+sigma);
+      mean_2s_EBP->SetPoint(i,i+1,mean+(2*sigma));
+      maxEnergy_EBP->SetPoint(i,i+1,maxEnergy);
     }
     std::cout << "TGraphs for EB filled" << std::endl;
     
-    for(int i = 0; i < kEndcEtaRings; i++) { //EE
-      mean = eCut_spectrum_e_histos[i]->GetMean();
-      sigma = eCut_spectrum_e_histos[i]->GetStdDev();
-      maxEnergy = (eCut_spectrum_e_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
+    for(int i = 0; i < EE_Rings; i++) { //EE-
+      mean = eCut_spectrum_EM_histos[i]->GetMean();
+      sigma = eCut_spectrum_EM_histos[i]->GetStdDev();
+      maxEnergy = (eCut_spectrum_EM_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
       
-      mean_EE->SetPoint(i,i+1,mean);
-      mean_1s_EE->SetPoint(i,i+1,mean+sigma);
-      mean_2s_EE->SetPoint(i,i+1,mean+(2*sigma));
-      maxEnergy_EE->SetPoint(i,i+1,maxEnergy);
+      mean_EEM->SetPoint(i,i+1,mean);
+      mean_1s_EEM->SetPoint(i,i+1,mean+sigma);
+      mean_2s_EEM->SetPoint(i,i+1,mean+(2*sigma));
+      maxEnergy_EEM->SetPoint(i,i+1,maxEnergy);
+    }
+
+    for(int i = 0; i < EE_Rings; i++) { //EE+
+      mean = eCut_spectrum_EP_histos[i]->GetMean();
+      sigma = eCut_spectrum_EP_histos[i]->GetStdDev();
+      maxEnergy = (eCut_spectrum_EP_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
+      
+      mean_EEP->SetPoint(i,i+1,mean);
+      mean_1s_EEP->SetPoint(i,i+1,mean+sigma);
+      mean_2s_EEP->SetPoint(i,i+1,mean+(2*sigma));
+      maxEnergy_EEP->SetPoint(i,i+1,maxEnergy);
     }
     std::cout << "TGraphs for EE filled" << std::endl;
     
     outputFile->Close();
        
-    //draw EB plot
-    TCanvas *c1 = new TCanvas("c1","c1");
-    c1->SetGrid();
-    c1->SetFillColor(0);
+    //draw plots
+    std::string Title;
+    if (ii == 0)
+      Title = "203777";
+    else if (ii == 1)
+      Title = "208686";
 
-    TMultiGraph *mg1 = new TMultiGraph();
-
-    mg1->Add(mean_EB,"lp");
-    mg1->Add(mean_1s_EB,"cp");
-    mg1->Add(mean_2s_EB,"cp");
-    mg1->Add(maxEnergy_EB,"cp");
-    
-    mean_EB->SetMarkerColor(kRed);
-    mean_EB->SetMarkerStyle(20);
-    mean_EB->SetMarkerSize(0.8);
-    
-    mean_1s_EB->SetMarkerColor(kBlue);
-    mean_1s_EB->SetMarkerStyle(20);
-    mean_1s_EB->SetMarkerSize(0.8);
-    
-    mean_2s_EB->SetMarkerColor(kBlack);
-    mean_2s_EB->SetMarkerStyle(20);
-    mean_2s_EB->SetMarkerSize(0.8);
-
-    maxEnergy_EB->SetMarkerColor(kGreen);
-    maxEnergy_EB->SetMarkerStyle(20);
-    maxEnergy_EB->SetMarkerSize(0.8);
-       
-    mg1->SetTitle("EB;Rings (#); Energy (MeV)");
-    mg1->Draw("APC");
-    t << "plot_EB_" << ii+1 << ".pdf";
-    c1->Draw();
-    c1->Print(t.str().c_str(),"pdf");
-    t.str("");
-
-    delete mean_EB;
-    delete mean_1s_EB;
-    delete mean_2s_EB;    
-    delete maxEnergy_EB;
-    delete c1;
-    delete mg1;
-         
-    //draw EE plot
-    TCanvas *c2 = new TCanvas("c2","c2");
-    c2->SetGrid();
-    c2->SetFillColor(0);
-    
-    TMultiGraph *mg2 = new TMultiGraph();
-
-    mg2->Add(mean_EE,"lp");
-    mg2->Add(mean_1s_EE,"cp");
-    mg2->Add(mean_2s_EE,"cp");
-    mg2->Add(maxEnergy_EE,"cp");
-    
-    mean_EE->SetMarkerColor(kRed);
-    mean_EE->SetMarkerStyle(20);
-    mean_EE->SetMarkerSize(0.8);
-    
-    mean_1s_EE->SetMarkerColor(kBlue);
-    mean_1s_EE->SetMarkerStyle(20);
-    mean_1s_EE->SetMarkerSize(0.8);
-   
-    mean_2s_EE->SetMarkerColor(kBlack);
-    mean_2s_EE->SetMarkerStyle(20);
-    mean_2s_EE->SetMarkerSize(0.8);
-    
-    maxEnergy_EE->SetMarkerColor(kGreen);
-    maxEnergy_EE->SetMarkerStyle(20);
-    maxEnergy_EE->SetMarkerSize(0.8);
-    
-    mg2->SetTitle("EE;Rings (#); Energy (MeV)");
-    mg2->Draw("APC");
-    t << "plot_EE_" << ii+1 << ".pdf";
-    c2->Draw();
-    c2->Print(t.str().c_str(),"pdf");
-    
-    delete mean_EE;
-    delete mean_1s_EE;
-    delete mean_2s_EE;
-    delete maxEnergy_EE;
-    delete c2;
-    delete mg2;
-    
+    drawGraphs(mean_EBM,mean_1s_EBM,mean_2s_EBM,maxEnergy_EBM,std::string("EBM_"+Title));   
+    drawGraphs(mean_EBP,mean_1s_EBP,mean_2s_EBP,maxEnergy_EBP,std::string("EBP_"+Title));   
+    drawGraphs(mean_EEM,mean_1s_EEM,mean_2s_EEM,maxEnergy_EEM,std::string("EEM_"+Title));   
+    drawGraphs(mean_EEP,mean_1s_EEP,mean_2s_EEP,maxEnergy_EEP,std::string("EEP_"+Title));   
+      
   }//loop over the list (index ii)
  
     
 }//main 
 
 // function to convert unsigned int into string
-string uintToString(unsigned int val)
-{
+string uintToString(unsigned int val) {
   char buff[500];
   sprintf(buff, "%u", val);
   string str = buff;
   return(str);
+}
+
+void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title){
+    
+  g1 ->SetTitle(Title.c_str());
+  g1 -> GetXaxis() -> SetLabelSize(0.04);
+  g1 -> GetYaxis() -> SetLabelSize(0.04);
+  g1 -> GetXaxis() -> SetTitleSize(0.05);
+  g1 -> GetYaxis() -> SetTitleSize(0.05);
+  g1 -> GetYaxis() -> SetTitleOffset(0.8);
+
+  g1 -> GetXaxis() -> SetTitle("iRing");
+  g1 -> GetYaxis() -> SetTitle("Energy (MeV)");
+   
+  g1 -> SetMarkerStyle(20);
+  g1 -> SetMarkerColor(kBlack);
+  g1 -> SetLineColor(kBlack);
+  g1 -> SetMarkerSize(0.5);
+  g2 -> SetMarkerStyle(20);
+  g2 -> SetMarkerColor(kBlue);
+  g2 -> SetLineColor(kBlue);
+  g2 -> SetLineWidth(2.);
+  g3 -> SetMarkerSize(0.5);
+  g3 -> SetMarkerStyle(20);
+  g3 -> SetMarkerColor(kRed);
+  g3 -> SetLineColor(kRed);
+  g3 -> SetLineWidth(2.);
+  g3 -> SetMarkerSize(0.5);
+  g4 -> SetMarkerColor(kGreen);
+  g4 -> SetLineColor(kGreen);
+  g4 -> SetLineWidth(2.);
+  g4 -> SetMarkerSize(0.5);
+
+  TLegend* legend = new TLegend(0.85, 0.84, 1., 0.96);
+  legend -> SetFillColor(kWhite);
+  legend -> SetFillStyle(1000);
+  legend -> SetLineWidth(0); 
+  legend -> SetLineColor(kWhite);
+  legend -> SetTextFont(42);
+  legend -> SetTextSize(0.04);
+  legend -> AddEntry(g1,"mean cut energy","P");
+  legend -> AddEntry(g2,"mean cut energy + 1 #sigma","L");
+  legend -> AddEntry(g3,"mean cut energy + 2 #sigma","L");
+  legend -> AddEntry(g4,"max cut energy","L");
+
+  TCanvas* c1 = new TCanvas("c1","c1");
+  c1 -> cd();
+
+  g1 -> Draw("APL");
+  g2 -> Draw("same");
+  g3 -> Draw("same");
+  g4 -> Draw("same");
+  legend -> Draw("same");
+
+  c1 -> Print((Title+".png").c_str(),"png");
+  //c1 -> Print((Title+".pdf").c_str(),"pdf");
+    
+  delete c1;
+
 }
