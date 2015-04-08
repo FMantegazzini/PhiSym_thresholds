@@ -332,11 +332,11 @@ int main(int argc, char** argv)
 	eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
 	if (IC > 1.5){
 	  h2_IC_EB->SetBinContent(h2_IC_EB->FindBin(iphi,ieta),IC); 
-	  cout << "EB bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
+	  if (IC > 3.) cout << "***EB bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
 	}
 	if (LC > 5.) {
 	  h2_LC_EB->SetBinContent(h2_LC_EB->FindBin(iphi,ieta),LC); 
-	  cout << "EB bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl; 
+	  if (LC > 9.) cout << "***EB bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl; 
 	}
 	if (ieta < 0) { //EB-
 	  eCut_spectrum_BM_histos[ieta+85]->Fill(eCut_b*1000.); 
@@ -353,22 +353,22 @@ int main(int argc, char** argv)
 	  eCut_spectrum_EM_histos[iring]->Fill(eCut_e*1000.);
 	  if (IC > 1.5) {
 	    h2_IC_EEM->SetBinContent(h2_IC_EEM->FindBin(ieta,iphi),IC); //ieta=ix, iphi=iy
-	    cout << "EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
+	    if (IC > 3.) cout << "***EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
 	  }
 	  if (LC > 5.){
 	    h2_LC_EEM->SetBinContent(h2_LC_EEM->FindBin(ieta,iphi),LC); //ieta=ix, iphi=iy
-	    cout << "EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
+	    if (LC > 9.) cout << "***EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
 	  }
 	}
 	else if (iz > 0) { // EE+
 	  eCut_spectrum_EP_histos[iring]->Fill(eCut_e*1000.); 
 	  if (IC > 1.5){
 	    h2_IC_EEP->SetBinContent(h2_IC_EEP->FindBin(ieta,iphi),IC); //ieta=ix, iphi=iy
-	    cout << "EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
+	    if (IC > 3.) cout << "***EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
 	  }
 	  if (LC > 5.){
 	    h2_LC_EEP->SetBinContent(h2_LC_EEP->FindBin(ieta,iphi),LC); //ieta=ix, iphi=iy
-	    cout << "EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
+	    if (LC > 9.) cout << "***EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
 	  }
 	}
       }
@@ -581,7 +581,7 @@ void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EB
     h2_IC -> GetXaxis() -> SetTitle("iphi");
     h2_IC -> GetYaxis() -> SetTitle("ieta");
     h2_IC -> GetZaxis() -> SetTitle("IC");
-    h2_IC -> GetZaxis() -> SetRangeUser(1.4,3.);
+    h2_IC -> GetZaxis() -> SetRangeUser(1.5,3.);
     h2_IC -> SetMarkerStyle(20);
     h2_IC -> SetMarkerColor(kRed);
     h2_IC -> SetMarkerSize(0.6);
@@ -590,7 +590,7 @@ void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EB
     h2_LC -> GetXaxis() -> SetTitle("iphi");
     h2_LC -> GetYaxis() -> SetTitle("ieta");
     h2_LC -> GetZaxis() -> SetTitle("LC");
-    h2_LC -> GetZaxis() -> SetRangeUser(4.9,9.);
+    h2_LC -> GetZaxis() -> SetRangeUser(5.,12.5);
     h2_LC -> SetMarkerStyle(20);
     h2_LC -> SetMarkerColor(kRed);
     h2_LC -> SetMarkerSize(0.6);
@@ -606,7 +606,7 @@ void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EB
     h2_IC -> GetXaxis() -> SetTitle("ix");
     h2_IC -> GetYaxis() -> SetTitle("iy");
     h2_IC -> GetZaxis() -> SetTitle("IC");
-    h2_IC -> GetZaxis() -> SetRangeUser(1.4,3.);
+    h2_IC -> GetZaxis() -> SetRangeUser(1.5,3.);
     h2_IC -> SetMarkerStyle(20);
     h2_IC -> SetMarkerColor(kRed);
     h2_IC -> SetMarkerSize(0.6);
@@ -615,7 +615,7 @@ void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EB
     h2_LC -> GetXaxis() -> SetTitle("ix");
     h2_LC -> GetYaxis() -> SetTitle("iy");
     h2_LC -> GetZaxis() -> SetTitle("LC");
-    h2_LC -> GetZaxis() -> SetRangeUser(4.9,9.);
+    h2_LC -> GetZaxis() -> SetRangeUser(5.,12.5);
     h2_LC -> SetMarkerStyle(20);
     h2_LC -> SetMarkerColor(kRed);
     h2_LC -> SetMarkerSize(0.6);
@@ -631,7 +631,7 @@ void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EB
     h2_IC -> GetXaxis() -> SetTitle("ix");
     h2_IC -> GetYaxis() -> SetTitle("iy");
     h2_IC -> GetZaxis() -> SetTitle("IC");
-    h2_IC -> GetZaxis() -> SetRangeUser(1.4,3.);
+    h2_IC -> GetZaxis() -> SetRangeUser(1.5,3.);
     h2_IC -> SetMarkerStyle(20);
     h2_IC -> SetMarkerColor(kRed);
     h2_IC -> SetMarkerSize(0.6);
@@ -640,7 +640,7 @@ void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EB
     h2_LC -> GetXaxis() -> SetTitle("ix");
     h2_LC -> GetYaxis() -> SetTitle("iy");
     h2_LC -> GetZaxis() -> SetTitle("LC");
-    h2_LC -> GetZaxis() -> SetRangeUser(4.9,9.);
+    h2_LC -> GetZaxis() -> SetRangeUser(5.,12.5);
     h2_LC -> SetMarkerStyle(20);
     h2_LC -> SetMarkerColor(kRed);
     h2_LC -> SetMarkerSize(0.6);
