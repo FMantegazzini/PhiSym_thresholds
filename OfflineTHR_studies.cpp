@@ -29,6 +29,7 @@ using namespace std;
 
 string uintToString (unsigned int);
 void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3, TGraph* g4, std::string Title, int xmin, int xmax, int ymin, int ymax);
+void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EBEE);
 
 int main(int argc, char** argv)
 {
@@ -301,7 +302,14 @@ int main(int argc, char** argv)
       
     }//reading the file 
 
-                 
+    //TH2F for IC and LC Channel maps
+    TH2F *h2_IC_EB = new TH2F("h2_IC_EB","h2_IC_EB",360,0,360,170,-85,85);
+    TH2F *h2_LC_EB = new TH2F("h2_LC_EB","h2_LC_EB",360,0,360,170,-85,85);
+    TH2F *h2_IC_EEM = new TH2F("h2_IC_EEM","h2_IC_EEM",100,1,101,100,1,101);
+    TH2F *h2_LC_EEM = new TH2F("h2_LC_EEM","h2_LC_EEM",100,1,101,100,1,101);
+    TH2F *h2_IC_EEP = new TH2F("h2_IC_EEP","h2_IC_EEP",100,1,101,100,1,101);
+    TH2F *h2_LC_EEP = new TH2F("h2_LC_EEP","h2_LC_EEP",100,1,101,100,1,101);
+                  
     //loop on the apdpn map --> get rawid and apdpnratio
     std::cout << ">>>>>> Beginning iteration over the crystals" << std::endl;
     for (std::map<long int,float>::iterator it=apdpnMap.begin(); it!=apdpnMap.end(); ++it) { //apdpn map iterator
@@ -322,7 +330,14 @@ int main(int argc, char** argv)
       
       if ( mapRawId_EB[rawid]==1 ) { //EB
 	eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
-	
+	if (IC > 1.5){
+	  h2_IC_EB->SetBinContent(h2_IC_EB->FindBin(iphi,ieta),IC); 
+	  cout << "EB bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
+	}
+	if (LC > 5.) {
+	  h2_LC_EB->SetBinContent(h2_LC_EB->FindBin(iphi,ieta),LC); 
+	  cout << "EB bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl; 
+	}
 	if (ieta < 0) { //EB-
 	  eCut_spectrum_BM_histos[ieta+85]->Fill(eCut_b*1000.); 
 	}
@@ -336,9 +351,25 @@ int main(int argc, char** argv)
 	int iring = eeId->GetEndcapRing(ieta,iphi,iz); //actually ieta is ix and iphi is iy	
 	if (iz < 0) { // EE-
 	  eCut_spectrum_EM_histos[iring]->Fill(eCut_e*1000.);
+	  if (IC > 1.5) {
+	    h2_IC_EEM->SetBinContent(h2_IC_EEM->FindBin(ieta,iphi),IC); //ieta=ix, iphi=iy
+	    cout << "EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
+	  }
+	  if (LC > 5.){
+	    h2_LC_EEM->SetBinContent(h2_LC_EEM->FindBin(ieta,iphi),LC); //ieta=ix, iphi=iy
+	    cout << "EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
+	  }
 	}
 	else if (iz > 0) { // EE+
-	  eCut_spectrum_EP_histos[iring]->Fill(eCut_e*1000.);  
+	  eCut_spectrum_EP_histos[iring]->Fill(eCut_e*1000.); 
+	  if (IC > 1.5){
+	    h2_IC_EEP->SetBinContent(h2_IC_EEP->FindBin(ieta,iphi),IC); //ieta=ix, iphi=iy
+	    cout << "EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
+	  }
+	  if (LC > 5.){
+	    h2_LC_EEP->SetBinContent(h2_LC_EEP->FindBin(ieta,iphi),LC); //ieta=ix, iphi=iy
+	    cout << "EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
+	  }
 	}
       }
       
@@ -365,6 +396,17 @@ int main(int argc, char** argv)
     }
     
     std::cout << "Output file ESpectra written" << std::endl;
+
+    //draw TH2F for IC and LC maps
+    std::string run;
+    if (ii == 0)
+      run = "203777";
+    else if (ii == 1)
+      run = "208686";
+
+    drawChannelsMaps (h2_IC_EB, h2_LC_EB, run, "EB");
+    drawChannelsMaps (h2_IC_EEM, h2_LC_EEM, run, "EEM");
+    drawChannelsMaps (h2_IC_EEP, h2_LC_EEP, run, "EEP");
     
     //MAKE FINAL PLOTS
     Double_t mean, sigma, maxEnergy;
@@ -378,7 +420,7 @@ int main(int argc, char** argv)
     TGraph *mean_2s_EBM = new TGraph(); //energy mean + 2sigma vs ring for EB-
     TGraph *maxEnergy_EBP = new TGraph(); //max energy vs ring for EB+
     TGraph *maxEnergy_EBM = new TGraph(); //max energy vs ring for EB-
-
+    
     //EE
     TGraph *mean_EEP = new TGraph(); //energy mean vs ring for EE+
     TGraph *mean_EEM = new TGraph(); //energy mean vs ring for EE-
@@ -388,8 +430,7 @@ int main(int argc, char** argv)
     TGraph *mean_2s_EEM = new TGraph(); //energy mean + 2sigma vs ring for EE-
     TGraph *maxEnergy_EEP = new TGraph(); //max energy vs ring for EE+
     TGraph *maxEnergy_EEM = new TGraph(); //max energy vs ring for EE-
-
-    
+        
     std::cout << "TGraphs created" << std::endl;
         
     for(int i = 0; i < EB_Rings; i++) { //EB-
@@ -424,7 +465,6 @@ int main(int argc, char** argv)
       mean_1s_EEM->SetPoint(i,i+1,mean+sigma);
       mean_2s_EEM->SetPoint(i,i+1,mean+(2*sigma));
       maxEnergy_EEM->SetPoint(i,i+1,maxEnergy);
-      //cout << "EEM: ring " << i+1 << ", energia media " << mean << endl;
     }
 
     for(int i = 0; i < EE_Rings; i++) { //EE+
@@ -441,17 +481,11 @@ int main(int argc, char** argv)
     
     outputFile->Close();
        
-    //draw plots
-    std::string Title;
-    if (ii == 0)
-      Title = "203777";
-    else if (ii == 1)
-      Title = "208686";
-
-    drawGraphs(mean_EBM,mean_1s_EBM,mean_2s_EBM,maxEnergy_EBM,std::string("EBM_"+Title),-87,0,20,110);   
-    drawGraphs(mean_EBP,mean_1s_EBP,mean_2s_EBP,maxEnergy_EBP,std::string("EBP_"+Title),-1,86,20,110);   
-    drawGraphs(mean_EEM,mean_1s_EEM,mean_2s_EEM,maxEnergy_EEM,std::string("EEM_"+Title),-1,40,0,1000);   
-    drawGraphs(mean_EEP,mean_1s_EEP,mean_2s_EEP,maxEnergy_EEP,std::string("EEP_"+Title),-1,40,0,1450);   
+    //draw plots   
+    drawGraphs(mean_EBM,mean_1s_EBM,mean_2s_EBM,maxEnergy_EBM,std::string("EBM_"+run),-87,0,20,110);   
+    drawGraphs(mean_EBP,mean_1s_EBP,mean_2s_EBP,maxEnergy_EBP,std::string("EBP_"+run),-1,86,20,110);   
+    drawGraphs(mean_EEM,mean_1s_EEM,mean_2s_EEM,maxEnergy_EEM,std::string("EEM_"+run),-1,40,0,1000);   
+    drawGraphs(mean_EEP,mean_1s_EEP,mean_2s_EEP,maxEnergy_EEP,std::string("EEP_"+run),-1,40,0,1450);   
       
   }//loop over the list (index ii)
  
@@ -466,7 +500,7 @@ string uintToString(unsigned int val) {
   return(str);
 }
 
-void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, int xmin, int xmax, int ymin, int ymax){
+void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, int xmin, int xmax, int ymin, int ymax) {
     
   g1 -> SetTitle(Title.c_str());
   g1 -> GetXaxis() -> SetLabelSize(0.04);
@@ -512,7 +546,7 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   legend -> SetLineColor(kWhite);
   legend -> SetTextFont(42);
   legend -> SetTextSize(0.04);
-  legend -> AddEntry(g1,"mean energy""L");
+  legend -> AddEntry(g1,"mean energy","L");
   legend -> AddEntry(g2,"mean energy + 1 #sigma","L");
   legend -> AddEntry(g3,"mean energy + 2 #sigma","L");
   legend -> AddEntry(g4,"max energy","L");
@@ -532,3 +566,105 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   delete c1;
 
 }
+
+void drawChannelsMaps (TH2F *h2_IC, TH2F *h2_LC, std::string run, std::string EBEE) {
+
+  std::string TitleIC;
+  std::string TitleLC;
+
+  if (EBEE == "EB") {
+
+    TitleIC = "IC_EB_"+run;
+    TitleLC = "LC_EB_"+run;
+
+    h2_IC -> SetTitle(TitleIC.c_str());
+    h2_IC -> GetXaxis() -> SetTitle("iphi");
+    h2_IC -> GetYaxis() -> SetTitle("ieta");
+    h2_IC -> GetZaxis() -> SetTitle("IC");
+    h2_IC -> GetZaxis() -> SetRangeUser(1.4,3.);
+    h2_IC -> SetMarkerStyle(20);
+    h2_IC -> SetMarkerColor(kRed);
+    h2_IC -> SetMarkerSize(0.6);
+    
+    h2_LC -> SetTitle(TitleLC.c_str());
+    h2_LC -> GetXaxis() -> SetTitle("iphi");
+    h2_LC -> GetYaxis() -> SetTitle("ieta");
+    h2_LC -> GetZaxis() -> SetTitle("LC");
+    h2_LC -> GetZaxis() -> SetRangeUser(4.9,9.);
+    h2_LC -> SetMarkerStyle(20);
+    h2_LC -> SetMarkerColor(kRed);
+    h2_LC -> SetMarkerSize(0.6);
+    
+  }
+
+  if (EBEE == "EEM") {
+
+    TitleIC = "IC_EEM_"+run;
+    TitleLC = "LC_EEM_"+run;
+   
+    h2_IC -> SetTitle(TitleIC.c_str());
+    h2_IC -> GetXaxis() -> SetTitle("ix");
+    h2_IC -> GetYaxis() -> SetTitle("iy");
+    h2_IC -> GetZaxis() -> SetTitle("IC");
+    h2_IC -> GetZaxis() -> SetRangeUser(1.4,3.);
+    h2_IC -> SetMarkerStyle(20);
+    h2_IC -> SetMarkerColor(kRed);
+    h2_IC -> SetMarkerSize(0.6);
+    
+    h2_LC -> SetTitle(TitleLC.c_str());
+    h2_LC -> GetXaxis() -> SetTitle("ix");
+    h2_LC -> GetYaxis() -> SetTitle("iy");
+    h2_LC -> GetZaxis() -> SetTitle("LC");
+    h2_LC -> GetZaxis() -> SetRangeUser(4.9,9.);
+    h2_LC -> SetMarkerStyle(20);
+    h2_LC -> SetMarkerColor(kRed);
+    h2_LC -> SetMarkerSize(0.6);
+
+  }
+
+  if (EBEE == "EEP") {
+
+    TitleIC = "IC_EEP_"+run;
+    TitleLC = "LC_EEP_"+run;  
+
+    h2_IC -> SetTitle(TitleIC.c_str());
+    h2_IC -> GetXaxis() -> SetTitle("ix");
+    h2_IC -> GetYaxis() -> SetTitle("iy");
+    h2_IC -> GetZaxis() -> SetTitle("IC");
+    h2_IC -> GetZaxis() -> SetRangeUser(1.4,3.);
+    h2_IC -> SetMarkerStyle(20);
+    h2_IC -> SetMarkerColor(kRed);
+    h2_IC -> SetMarkerSize(0.6);
+
+    h2_LC -> SetTitle(TitleLC.c_str());
+    h2_LC -> GetXaxis() -> SetTitle("ix");
+    h2_LC -> GetYaxis() -> SetTitle("iy");
+    h2_LC -> GetZaxis() -> SetTitle("LC");
+    h2_LC -> GetZaxis() -> SetRangeUser(4.9,9.);
+    h2_LC -> SetMarkerStyle(20);
+    h2_LC -> SetMarkerColor(kRed);
+    h2_LC -> SetMarkerSize(0.6);
+ 
+  }
+
+  TCanvas* c1 = new TCanvas("c1","c1");
+  c1 -> cd();
+  h2_IC -> Draw("colz");
+  
+  c1 -> Print((TitleIC+".png").c_str(),"png");
+  c1 -> Print((TitleIC+".pdf").c_str(),"pdf");
+    
+  delete c1;
+
+  TCanvas* c2 = new TCanvas("c2","c2");
+  c2 -> cd();
+  h2_LC -> Draw("colz");
+  
+  c2 -> Print((TitleLC+".png").c_str(),"png");
+  c2 -> Print((TitleLC+".pdf").c_str(),"pdf");
+
+  delete c2;
+
+}
+
+  
