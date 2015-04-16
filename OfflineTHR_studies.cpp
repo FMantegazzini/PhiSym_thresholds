@@ -15,6 +15,7 @@ using namespace std;
 #include <vector>
 #include "TFile.h"
 #include "TH1F.h"
+#include "TF1.h"
 #include "TGraph.h"
 #include "TCanvas.h"
 #include "TLegend.h"
@@ -497,18 +498,15 @@ string uintToString(unsigned int val) {
 
 void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, int xmin, int xmax, int ymin, int ymax) {
     
-  TF1 *parabola = new TF1("parabola", "pol2", xmin, xmax);
+  //fit
+  /*TF1 *parabola = new TF1("parabola", "pol2", xmin, xmax);
   g1 -> Fit("parabola","","", xmin, xmax);
-
-  //fit stat box
-  gStyle->SetOptFit(1111);
-  TPaveStats* st_g1 = new TPaveStats();
-  st_g1 = (TPaveStats*)(g1->GetListOfFunctions()->FindObject("stats"));
-  st_g1->SetX1NDC(0.82); 
-  st_g1->SetX2NDC(0.99); 
-  st_g1->SetY1NDC(0.70);
-  st_g1->SetY2NDC(0.82);
-  st_g1->SetTextColor(kBlack);
+  
+  gStyle -> SetOptFit (00111);
+  gStyle -> SetOptStat ("");
+  gStyle -> SetStatX (.90);
+  gStyle -> SetStatY (.90);
+  gStyle -> SetStatW (.15);*/
      
   g1 -> SetTitle(Title.c_str());
   g1 -> GetXaxis() -> SetLabelSize(0.04);
@@ -547,7 +545,7 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   g4 -> SetLineWidth(1.8);
   
 
-  TLegend* legend = new TLegend(0.65, 0.84, 1., 0.96);
+  TLegend* legend = new TLegend(.65, 0.84, 1., 0.96);
   legend -> SetFillColor(kWhite);
   legend -> SetFillStyle(1000);
   legend -> SetLineWidth(0); 
@@ -566,7 +564,6 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   g2 -> Draw("PL");
   g3 -> Draw("PL");
   g4 -> Draw("PL");
-  //st_g1->Draw("sames");
   legend -> Draw("same");
   
   c1 -> Print((Title+".png").c_str(),"png");
