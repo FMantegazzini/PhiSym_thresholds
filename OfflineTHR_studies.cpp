@@ -24,6 +24,7 @@ using namespace std;
 #include "TTree.h"
 #include "TStyle.h"
 #include "TMultiGraph.h"
+#include "TPaveStats.h"
 
 #include "geometryUtils.h"
 
@@ -332,11 +333,9 @@ int main(int argc, char** argv)
 	eCut_b = ADCAmp_b * LC * IC * ADCToGeV_b;
 	if (IC > 1.5){
 	  h2_IC_EB->SetBinContent(h2_IC_EB->FindBin(iphi,ieta),IC); 
-	  if (IC > 3.) cout << "***EB bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
 	}
 	if (LC > 5.) {
 	  h2_LC_EB->SetBinContent(h2_LC_EB->FindBin(iphi,ieta),LC); 
-	  if (LC > 9.) cout << "***EB bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl; 
 	}
 	if (ieta < 0) { //EB-
 	  eCut_spectrum_BM_histos[ieta+85]->Fill(eCut_b*1000.); 
@@ -353,22 +352,18 @@ int main(int argc, char** argv)
 	  eCut_spectrum_EM_histos[iring]->Fill(eCut_e*1000.);
 	  if (IC > 1.5) {
 	    h2_IC_EEM->SetBinContent(h2_IC_EEM->FindBin(ieta,iphi),IC); //ieta=ix, iphi=iy
-	    if (IC > 3.) cout << "***EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
 	  }
 	  if (LC > 5.){
 	    h2_LC_EEM->SetBinContent(h2_LC_EEM->FindBin(ieta,iphi),LC); //ieta=ix, iphi=iy
-	    if (LC > 9.) cout << "***EEM bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
 	  }
 	}
 	else if (iz > 0) { // EE+
 	  eCut_spectrum_EP_histos[iring]->Fill(eCut_e*1000.); 
 	  if (IC > 1.5){
 	    h2_IC_EEP->SetBinContent(h2_IC_EEP->FindBin(ieta,iphi),IC); //ieta=ix, iphi=iy
-	    if (IC > 3.) cout << "***EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; IC = " << IC << endl;
 	  }
 	  if (LC > 5.){
 	    h2_LC_EEP->SetBinContent(h2_LC_EEP->FindBin(ieta,iphi),LC); //ieta=ix, iphi=iy
-	    if (LC > 9.) cout << "***EEP bin: iphi = " << iphi << ", ieta = " << ieta << "; LC = " << LC << endl;
 	  }
 	}
       }
@@ -480,7 +475,7 @@ int main(int argc, char** argv)
     std::cout << "TGraphs for EE filled" << std::endl;
     
     outputFile->Close();
-       
+
     //draw plots   
     drawGraphs(mean_EBM,mean_1s_EBM,mean_2s_EBM,maxEnergy_EBM,std::string("EBM_"+run),-87,0,20,110);   
     drawGraphs(mean_EBP,mean_1s_EBP,mean_2s_EBP,maxEnergy_EBP,std::string("EBP_"+run),-1,86,20,110);   
@@ -502,6 +497,19 @@ string uintToString(unsigned int val) {
 
 void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, int xmin, int xmax, int ymin, int ymax) {
     
+  TF1 *parabola = new TF1("parabola", "pol2", xmin, xmax);
+  g1 -> Fit("parabola","","", xmin, xmax);
+
+  //fit stat box
+  gStyle->SetOptFit(1111);
+  TPaveStats* st_g1 = new TPaveStats();
+  st_g1 = (TPaveStats*)(g1->GetListOfFunctions()->FindObject("stats"));
+  st_g1->SetX1NDC(0.82); 
+  st_g1->SetX2NDC(0.99); 
+  st_g1->SetY1NDC(0.70);
+  st_g1->SetY2NDC(0.82);
+  st_g1->SetTextColor(kBlack);
+     
   g1 -> SetTitle(Title.c_str());
   g1 -> GetXaxis() -> SetLabelSize(0.04);
   g1 -> GetYaxis() -> SetLabelSize(0.04);
@@ -510,7 +518,7 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   g1 -> GetYaxis() -> SetTitleOffset(1.);
   g1 -> GetYaxis() -> SetRangeUser(ymin,ymax);
   g1 -> GetXaxis() -> SetRangeUser(xmin,xmax);
-
+ 
   g1 -> GetXaxis() -> SetTitle("iRing");
   g1 -> GetYaxis() -> SetTitle("Energy (MeV/ADC)");
    
@@ -558,8 +566,9 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   g2 -> Draw("PL");
   g3 -> Draw("PL");
   g4 -> Draw("PL");
+  //st_g1->Draw("sames");
   legend -> Draw("same");
-
+  
   c1 -> Print((Title+".png").c_str(),"png");
   c1 -> Print((Title+".pdf").c_str(),"pdf");
     
