@@ -400,9 +400,9 @@ int main(int argc, char** argv)
     else if (ii == 1)
       run = "208686";
 
-    drawChannelsMaps (h2_IC_EB, h2_LC_EB, run, "EB");
-    drawChannelsMaps (h2_IC_EEM, h2_LC_EEM, run, "EEM");
-    drawChannelsMaps (h2_IC_EEP, h2_LC_EEP, run, "EEP");
+    //drawChannelsMaps (h2_IC_EB, h2_LC_EB, run, "EB");
+    //drawChannelsMaps (h2_IC_EEM, h2_LC_EEM, run, "EEM");
+    //drawChannelsMaps (h2_IC_EEP, h2_LC_EEP, run, "EEP");
     
     //MAKE FINAL PLOTS
     Double_t mean, sigma, maxEnergy;
@@ -499,14 +499,17 @@ string uintToString(unsigned int val) {
 void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, int xmin, int xmax, int ymin, int ymax) {
     
   //fit
-  /*TF1 *parabola = new TF1("parabola", "pol2", xmin, xmax);
-  g1 -> Fit("parabola","","", xmin, xmax);
+  TF1 *f = new TF1("exp", "[0]+[1]*exp([2]*x)", 1, 39);
+  g1 -> Fit("exp","","", 1, 39);
+  
+  //TF1 *f = new TF1("parabola", "pol2", 1, 39);
+  //g1 -> Fit("parabola","","", 1, 39);
   
   gStyle -> SetOptFit (00111);
   gStyle -> SetOptStat ("");
   gStyle -> SetStatX (.90);
   gStyle -> SetStatY (.90);
-  gStyle -> SetStatW (.15);*/
+  gStyle -> SetStatW (.15);
      
   g1 -> SetTitle(Title.c_str());
   g1 -> GetXaxis() -> SetLabelSize(0.04);
@@ -518,7 +521,7 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   g1 -> GetXaxis() -> SetRangeUser(xmin,xmax);
  
   g1 -> GetXaxis() -> SetTitle("iRing");
-  g1 -> GetYaxis() -> SetTitle("Energy (MeV/ADC)");
+  g1 -> GetYaxis() -> SetTitle("ADCtoEnergy (MeV/ADC)");
    
   g1 -> SetMarkerStyle(20);
   g1 -> SetMarkerSize(0.6);
@@ -561,10 +564,10 @@ void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, 
   c1 -> cd();
 
   g1 -> Draw("APL");
-  g2 -> Draw("PL");
-  g3 -> Draw("PL");
-  g4 -> Draw("PL");
-  legend -> Draw("same");
+  //g2 -> Draw("PL");
+  //g3 -> Draw("PL");
+  //g4 -> Draw("PL");
+  //legend -> Draw("same");
   
   c1 -> Print((Title+".png").c_str(),"png");
   c1 -> Print((Title+".pdf").c_str(),"pdf");
