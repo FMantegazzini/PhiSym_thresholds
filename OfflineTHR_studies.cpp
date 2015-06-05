@@ -457,10 +457,10 @@ int main(int argc, char** argv)
       sigma = eCut_spectrum_EM_histos[i]->GetStdDev();
       maxEnergy = (eCut_spectrum_EM_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
       
-      mean_EEM->SetPoint(i,i+1,mean);
-      mean_1s_EEM->SetPoint(i,i+1,mean+sigma);
-      mean_2s_EEM->SetPoint(i,i+1,mean+(2*sigma));
-      maxEnergy_EEM->SetPoint(i,i+1,maxEnergy);
+      mean_EEM->SetPoint(i,i,mean);
+      mean_1s_EEM->SetPoint(i,i,mean+sigma);
+      mean_2s_EEM->SetPoint(i,i,mean+(2*sigma));
+      maxEnergy_EEM->SetPoint(i,i,maxEnergy);
     }
 
     for(int i = 0; i < EE_Rings; i++) { //EE+
@@ -468,10 +468,10 @@ int main(int argc, char** argv)
       sigma = eCut_spectrum_EP_histos[i]->GetStdDev();
       maxEnergy = (eCut_spectrum_EP_histos[i]->FindLastBinAbove()) * (eMax_e - eMin_e) / nBins_e;
       
-      mean_EEP->SetPoint(i,i+1,mean);
-      mean_1s_EEP->SetPoint(i,i+1,mean+sigma);
-      mean_2s_EEP->SetPoint(i,i+1,mean+(2*sigma));
-      maxEnergy_EEP->SetPoint(i,i+1,maxEnergy);
+      mean_EEP->SetPoint(i,i,mean);
+      mean_1s_EEP->SetPoint(i,i,mean+sigma);
+      mean_2s_EEP->SetPoint(i,i,mean+(2*sigma));
+      maxEnergy_EEP->SetPoint(i,i,maxEnergy);
     }
     std::cout << "TGraphs for EE filled" << std::endl;
     
@@ -499,11 +499,14 @@ string uintToString(unsigned int val) {
 void drawGraphs(TGraph* g1,TGraph* g2,TGraph* g3,TGraph* g4, std::string Title, int xmin, int xmax, int ymin, int ymax) {
     
   //fit
-  TF1 *f = new TF1("exp", "[0]+[1]*exp([2]*x)", 1, 39);
-  g1 -> Fit("exp","","", 1, 39);
+  //TF1 *f = new TF1("exp", "[0]+[1]*exp([2]*x)", 0, 38);
+  //g1 -> Fit("exp","","", 0, 38);
   
-  //TF1 *f = new TF1("parabola", "pol2", 1, 39);
-  //g1 -> Fit("parabola","","", 1, 39);
+  TF1 *f = new TF1("parabola", "pol2", 0, 38);
+  g1 -> Fit("parabola","","", 0, 38);
+
+  //TF1 *f = new TF1("f3", "pol3", 0, 38);
+  //g1 -> Fit("f3","","", 0, 38);
   
   gStyle -> SetOptFit (00111);
   gStyle -> SetOptStat ("");
